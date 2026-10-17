@@ -1,0 +1,42 @@
+[
+  {
+    "id": "btc",
+    "qr": "btc.svg",
+    "icon": "icon-btc.svg",
+    "width": 192,
+    "address": "bc1pmuuq249apm4zs83kmgj2f444xjzdzu6amlc8j056h4mvx9l7wekqy2wgv6",
+    "uri": "bitcoin:bc1pmuuq249apm4zs83kmgj2f444xjzdzu6amlc8j056h4mvx9l7wekqy2wgv6"
+  },
+  {
+    "id": "evm",
+    "qr": "evm.svg",
+    "icon": "icon-evm.svg",
+    "width": 184,
+    "address": "0x2f46f5b575c4ae379b58d4471b37d2ed55397f6d",
+    "uri": "ethereum:0x2f46f5b575c4ae379b58d4471b37d2ed55397f6d"
+  },
+  {
+    "id": "sol",
+    "qr": "sol.svg",
+    "icon": "icon-sol.svg",
+    "width": 184,
+    "address": "2pZjiHjADu2P9qwxc58pkvRWngGqBn7vE3d9gncu34XJ",
+    "uri": "solana:2pZjiHjADu2P9qwxc58pkvRWngGqBn7vE3d9gncu34XJ"
+  },
+  {
+    "id": "xmr",
+    "qr": "xmr.svg",
+    "icon": "icon-xmr.svg",
+    "width": 224,
+    "address": "85pC3mUAFWnTjYzkEWLS3VQBZdq7FEKSbbLmeiouBnsr5PKqhuenfXPBsMYt8C6da4DnrTJ3RdjksC44zZRE6YpvJaq5fcn",
+    "uri": "monero:85pC3mUAFWnTjYzkEWLS3VQBZdq7FEKSbbLmeiouBnsr5PKqhuenfXPBsMYt8C6da4DnrTJ3RdjksC44zZRE6YpvJaq5fcn"
+  },
+  {
+    "id": "zec",
+    "qr": "zec.svg",
+    "icon": "icon-zec.svg",
+    "width": 272,
+    "address": "u146gwwuvfh97ufw4l329ry5ld0amxy740xjgj90wkx3qjkwc2yd6dysm6khfmk5m4mlrhkz65kmqnwxw74lytukpuqp4ymvtevsrf5fnt6uwlw4wjuvaj2saux70pjhzjhxz88z23940qgpgvzpuf0qxnehcv30y8pzu522laevjywy28",
+    "uri": "zcash:u146gwwuvfh97ufw4l329ry5ld0amxy740xjgj90wkx3qjkwc2yd6dysm6khfmk5m4mlrhkz65kmqnwxw74lytukpuqp4ymvtevsrf5fnt6uwlw4wjuvaj2saux70pjhzjhxz88z23940qgpgvzpuf0qxnehcv30y8pzu522laevjywy28"
+  }
+]

@@ -1,0 +1,77 @@
+# Skeleton of the mihomo (Clash Meta) profile that secrets/mihomo.yaml holds, with the settings this
+# configuration depends on. Copy it to CM.min.yaml (git-ignored), replace the placeholders with your own
+# servers and rules, then encrypt it as described at https://nixos.ssf.network/runbook/secrets/.
+# Never commit the filled-in file: it contains proxy credentials.
+#
+# mihomo option reference: https://wiki.metacubex.one/en/config/
+
+mixed-port: 7890 # HTTP + SOCKS on one port; the firewall keeps it unreachable from outside
+allow-lan: false # the laptop is not a relay
+mode: rule
+log-level: warning
+ipv6: true
+
+# Dashboard API: loopback only, with a secret. The web UI itself comes from services.mihomo.webui, so no
+# external-ui key here.
+external-controller: 127.0.0.1:9090
+secret: "CHANGE-ME"
+
+profile:
+  store-selected: true # remember the chosen proxies across restarts (state lives in the persisted state dir)
+  store-fake-ip: true
+
+tun:
+  enable: true
+  device: Meta # the firewall trusts this interface name (modules/nixos/hardening/network.nix)
+  stack: system # better throughput on Linux than gvisor
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  # no auto-redir: it adds its own nftables redirect, redundant with auto-route and in conflict with the
+  # system firewall
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053 # the service has no CAP_NET_BIND_SERVICE; port 53 is reached through dns-hijack
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "*.lan"
+    - "+.local"
+  # Plain resolvers used only to look up the encrypted ones below: literal IPs, so startup cannot deadlock.
+  default-nameserver:
+    - 9.9.9.9
+    - 149.112.112.112
+  nameserver:
+    - https://dns.quad9.net/dns-query
+    - https://dns.mullvad.net/dns-query
+
+proxies:
+  # One placeholder per line of credentials you will fill in. Any mihomo proxy type works here.
+  - name: example-ss
+    type: ss
+    server: proxy.example.com
+    port: 8388
+    cipher: aes-256-gcm
+    password: "CHANGE-ME"
+  - name: example-trojan
+    type: trojan
+    server: proxy.example.net
+    port: 443
+    password: "CHANGE-ME"
+    sni: proxy.example.net
+
+proxy-groups:
+  - name: PROXY
+    type: select
+    proxies:
+      - example-ss
+      - example-trojan
+      - DIRECT
+
+rules:
+  - DOMAIN-KEYWORD,nixos,DIRECT # cache.nixos.org and friends: the binary cache should not ride the proxy
+  - GEOIP,LAN,DIRECT,no-resolve
+  - MATCH,PROXY

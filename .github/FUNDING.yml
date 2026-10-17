@@ -1,0 +1,3 @@
+# GitHub's "Sponsor" button. The addresses, QR codes and their consistency check live in .github/donate/
+# (README → Support, docs site → Donate).
+custom: ["https://play.ssf.network/donate"]

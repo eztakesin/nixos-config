@@ -1,0 +1,19 @@
+/***********************************************************
+ * userChrome.css — hide the tab bar (tabs are driven from the keyboard / sidebar).
+ * Needs toolkit.legacyUserProfileCustomizations.stylesheets = true (set in user-overrides.js).
+ * Managed by Home-Manager: edit → rebuild → restart Firefox.
+ * (The macOS traffic-light padding from the original was dropped.)
+ ***********************************************************/
+
+#TabsToolbar {
+  visibility: collapse !important;
+}
+
+#nav-bar {
+  -moz-window-dragging: drag;
+}
+
+#urlbar,
+#nav-bar toolbarbutton {
+  -moz-window-dragging: no-drag;
+}

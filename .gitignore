@@ -1,0 +1,40 @@
+# Build artifacts
+result
+result-*
+
+# Documentation sources, the docs site and internal notes (decision log): published only as the site,
+# https://nixos.ssf.network — the repository does not duplicate them.
+/docs/
+
+# The real mihomo/Clash Meta profile holds proxy credentials; example.CM.min.yaml is the public skeleton.
+CM.min.yaml
+
+# direnv
+.direnv/
+
+# Editor / OS cruft
+*.swp
+*~
+.DS_Store
+
+# Old Linux config, kept locally only as read-only reference — NOT part of the new flake.
+/nixos-config/
+
+# Decrypted secrets must never be committed. (sops *ciphertext* IS committed on purpose.)
+*.dec
+/secrets/age/keys.txt
+
+# Operator-specific private data — never public: identity, secondary account, cache keys.
+/my/private.nix
+
+# Assistant/agent artefacts — keep the public repo free of them.
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.cursor/
+.aider*
+*.ai.md
+
+# QEMU rehearsal working directory (scripts/vm-rehearsal.sh)
+/vm/

@@ -1,0 +1,13 @@
+# sops recipients. These are PUBLIC keys; the private halves never touch this repo.
+# One key group = any-of (never split into several groups — that becomes all-of).
+keys:
+  - &yk age1yubikey1qgme5xh9h60f08psmuxrr5wlj6uehwypyhq6sntwywsqehkv4m2gyk8twm9 # YubiKey PIV (age-plugin-yubikey)
+  - &paper age15gty9fgkvwadz0rv48jhprn2nxskymfljjywkchte5zdnf3wz5ysrqlauk # offline paper recovery key
+  - &cobalt age1pe2hhkxmk42h2hay22xpxn8sjej7w0pv3tklt2f7n32m9lgtcumqc4cy77 # host key (laptop), generated on the workstation
+creation_rules:
+  - path_regex: ^secrets/.*\.ya?ml$
+    key_groups:
+      - age:
+          - *yk
+          - *paper
+          - *cobalt
