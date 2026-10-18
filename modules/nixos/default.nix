@@ -12,8 +12,10 @@
     ./hardening/permissions.nix # sudo-rs, umask, fs.protected_*, no sshd, no default packages
     ./hardening/peripherals.nix # USBGuard, Bluetooth kept+tightened, IOMMU, unused modules, fwupd
     ./hardening/sandbox.nix # AppArmor, Flatpak + portals, bubblewrap
+    ./hardening/services.nix # systemd sandboxing for services with weak upstream units
     ./hardening/killswitch.nix # opt-in (my.features.killSwitch): egress drop when mihomo is down
     ./users.nix # operator + secondary account, sops password hashes
+    ./homed.nix # opt-in (my.features.homed): the operator's home as a systemd-homed LUKS image
     ./desktop-kde.nix # Plasma 6 Wayland, SDDM, PipeWire (+ BT codecs)
     ./locale-fonts.nix # locales, CJK fonts, fcitx5
     ./base-packages.nix # uutils ahead of GNU coreutils, base tools

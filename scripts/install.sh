@@ -14,10 +14,14 @@
 #
 # Phases: preflight → config + private data → host age key → disko (ONCE) → Secure Boot keys →
 #         FIDO2 + recovery enrollment on the detached header → nixos-install →
-#         populate the key's own installer partition → summary.
+#         the anonymous rescue system onto the key stick → summary.
 # Every destructive step prints what it is about to do and asks for the exact device id.
 # STATUS: exercised in the QEMU rehearsal (https://nixos.ssf.network/runbook/vm-rehearsal/); not yet on hardware.
 set -eu
+# Independent of the caller's umask: with 077 inherited from the shell (as when the host key was typed in
+# with `umask 077`), disko creates /mnt as 0700 and nixos-install refuses to continue ("path /mnt should
+# have permissions 755"). Secret files get explicit modes below (install -m 600 …).
+umask 022
 
 CONFIG_SRC=${COBALT_CONFIG:-/etc/cobalt/config}
 SYSTEM_LINK=${COBALT_SYSTEM:-/etc/cobalt/system}                     # → embedded cobalt toplevel
@@ -178,46 +182,49 @@ fi
 install -d -m 700 /mnt/persist/etc/cobalt
 cp -r "$WORK" /mnt/persist/etc/cobalt/config   # the exact configuration that was installed (incl. private.nix)
 
-# ── 7. the key's own installer partition + signed installer UKI on the ESP ───
-# 7a. The installer partition receives the iso9660 image itself (a byte copy of the live medium, not a
-#     file copy): the installer's stage 1 mounts /dev/disk/by-label/COBALT_INSTALL with fsType iso9660
-#     (nixpkgs iso-image.nix, fileSystems."/iso"; ext4 is not even in that initrd), so only an iso9660
-#     volume with that label boots. `isosize` reads the volume size from the primary volume descriptor.
-say "populating the key's installer partition"
-iso_dev=$(findmnt -no SOURCE /iso 2>/dev/null || true)
-if [ -n "$iso_dev" ] && [ -b "$iso_dev" ] && [ -b "$INSTALLER_PART" ]; then
-  iso_bytes=$(isosize "$iso_dev")
+# ── 7. the rescue system: the key's installer partition + a signed boot entry ─
+# The key stick is readable by whoever holds it (only the header is encrypted), so it gets the anonymous
+# rescue system (installer/rescue.nix), not this installer: the installer carries the whole installed
+# system, user names and e-mail address included. The rescue files sit on this medium under /iso/rescue/.
+# 7a. The installer partition receives the rescue ISO image byte for byte: its stage 1 mounts
+#     /dev/disk/by-label/NIXOS_RESCUE as iso9660 (nixpkgs iso-image.nix, fileSystems."/iso"), so only an
+#     iso9660 volume with that label boots.
+say "rescue system on the key's installer partition"
+rescue_iso=/iso/rescue/rescue.iso
+if [ -f "$rescue_iso" ] && [ -b "$INSTALLER_PART" ]; then
+  iso_bytes=$(stat -c %s "$rescue_iso")
   part_bytes=$(blockdev --getsize64 "$INSTALLER_PART")
   if [ "$iso_bytes" -le "$part_bytes" ]; then
-    dd if="$iso_dev" of="$INSTALLER_PART" bs=4M count="$iso_bytes" iflag=count_bytes conv=fsync status=progress
+    dd if="$rescue_iso" of="$INSTALLER_PART" bs=4M conv=fsync status=progress
     udevadm settle 2>/dev/null || true
-    echo "written: $iso_bytes bytes, iso9660 volume COBALT_INSTALL on $INSTALLER_PART"
+    echo "written: $iso_bytes bytes, iso9660 volume NIXOS_RESCUE on $INSTALLER_PART"
   else
-    echo "skipped: the live image ($iso_bytes bytes) does not fit the installer partition ($part_bytes bytes)"
+    echo "skipped: the rescue image ($iso_bytes bytes) does not fit the installer partition ($part_bytes bytes)"
   fi
 else
-  echo "skipped (live medium is not a block device — booted with copytoram? — or installer partition not found)"
+  echo "skipped ($rescue_iso missing — image built without installer/rescue.nix? — or installer partition not found)"
 fi
 
-# 7b. Boot entry: the installer's Unified Kernel Image (installer/default.nix, boot.uki) — kernel, initrd,
-#     command line and os-release in ONE file — signed with the db key from step 4 (sbctl keydir
-#     /var/lib/sbctl/keys) and placed in EFI/Linux/, where systemd-boot auto-discovers it (type #2 entry).
+# 7b. Boot entry: the rescue system's Unified Kernel Image — kernel, initrd, command line and os-release in
+#     ONE file — signed with the db key from step 4 (sbctl keydir /var/lib/sbctl/keys) and placed in
+#     EFI/Linux/, where systemd-boot auto-discovers it (type #2 entry, "NixOS rescue system").
 #     lanzaboote v1.2.0 only garbage-collects EFI/nixos/ and EFI/Linux/nixos-* (lzbt install.rs), so the
 #     file survives every nixos-rebuild; loader.conf keeps `default nixos-*`, so it never boots by default.
 #     Not `-s`aved to sbctl's files.json: that database was copied to the target in step 4 and the path
 #     would differ on the installed system (/boot/... vs /mnt/boot/...).
-say "installer boot entry (signed UKI on the ESP)"
-uki_src=/iso/boot/cobalt-installer.efi
-uki_dst=/mnt/boot/EFI/Linux/cobalt-installer.efi
+say "rescue boot entry (signed UKI on the ESP)"
+uki_src=/iso/rescue/rescue.efi
+uki_dst=/mnt/boot/EFI/Linux/rescue.efi
 if [ -f "$uki_src" ]; then
   install -d /mnt/boot/EFI/Linux
+  rm -f /mnt/boot/EFI/Linux/cobalt-installer.efi   # the entry earlier versions of this script installed
   sbctl sign -o "$uki_dst" "$uki_src"
   # sbctl locates the ESP itself (sbctl.go GetESP: $SYSTEMD_ESP_PATH, $ESP_PATH, then the usual mount
   # points); here it is mounted at /mnt/boot — the first rehearsal stopped on "failed to find EFI system partition".
   ESP_PATH=/mnt/boot sbctl verify "$uki_dst"
-  echo "entry: EFI/Linux/cobalt-installer.efi — shown as 'cobalt installer (recovery)' in the boot menu"
+  echo "entry: EFI/Linux/rescue.efi — shown as 'NixOS rescue system' in the boot menu"
 else
-  echo "skipped: $uki_src not found (image built without the UKI? see installer/default.nix)"
+  echo "skipped: $uki_src not found (image built without installer/rescue.nix?)"
 fi
 
 # ── 8. summary ───────────────────────────────────────────────────────────────

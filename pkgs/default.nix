@@ -1,12 +1,65 @@
-# Custom packages + per-app bubblewrap sandbox wrappers.
-# Exposed as the flake's `packages.<system>` and injected into every eval as `mypkgs`.
-#
-# TODO(next increment):
-#   - Auto-discovery scope (readDir + newScope + nvfetcher `source` auto-binding), as in oxalica's pkgs/.
-#   - bubblewrap GUI wrappers for browser / Signal / Element, modelled on
-#     oxalica's prismlauncher-bwrap.nix (--unshare-all, RO /nix /etc, selective Wayland socket, D-Bus block).
-#   - arkenfox user.js builder (concatText of pinned arkenfox + user-overrides.js), from your macOS config.
+# Custom packages: bubblewrap sandbox wrappers for the programs that open untrusted content (pkgs/bwrap-app.nix).
+# Exposed as the flake's `packages.<system>` and injected into every evaluation as `mypkgs`; the system installs
+# them in modules/nixos/hardening/sandbox.nix, which also holds their AppArmor profiles.
 { pkgs, inputs, lib }:
+let
+  mkBwrapApp = pkgs.callPackage ./bwrap-app.nix { };
+  # Read-only from $HOME for every GUI app: GTK settings written by Plasma, cursor and icon themes.
+  desktopRo = [
+    ".config/gtk-3.0"
+    ".config/gtk-4.0"
+    ".icons"
+    ".local/share/icons"
+  ];
+in
 {
-  # (empty until the first custom package lands)
+  # Firefox. Profile in ~/.config/mozilla (Home-Manager writes user.js there), cache in ~/.cache/mozilla,
+  # downloads and uploads through the Downloads folder only. Enterprise policies come from
+  # /etc/firefox/policies (modules/nixos/hardening/sandbox.nix).
+  firefox-bwrap = mkBwrapApp {
+    pname = "firefox";
+    package = pkgs.firefox;
+    program = "${pkgs.firefox}/bin/firefox";
+    binName = "firefox";
+    network = true;
+    gpu = true;
+    audio = true;
+    downloads = true;
+    homeDirs = [
+      ".config/mozilla"
+      ".cache/mozilla"
+    ];
+    homeDirsRo = desktopRo;
+  };
+
+  # PDF, PostScript, DjVu and comic books: zathura's own sandboxed build (no network, landlock-limited file
+  # access, seccomp) inside a bubblewrap sandbox that sees only the opened file. No GPU, no audio, no
+  # Downloads, nothing written: viewing history stays in the throwaway home.
+  zathura-bwrap = mkBwrapApp {
+    pname = "zathura";
+    package = pkgs.zathura;
+    program = "${pkgs.zathura}/bin/zathura-sandbox";
+    binName = "zathura";
+    openFiles = true;
+    homeDirsRo = desktopRo ++ [ ".config/zathura" ];
+  };
+}
+// lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
+  # Tor Browser (x86_64 only in nixpkgs). Its state lives in "~/.tor project" (the nixpkgs package marks
+  # itself as a packaged app); its bundled tor runs inside the same sandbox.
+  tor-browser-bwrap = mkBwrapApp {
+    pname = "tor-browser";
+    package = pkgs.tor-browser;
+    program = "${pkgs.tor-browser}/bin/tor-browser";
+    binName = "tor-browser";
+    network = true;
+    gpu = true;
+    audio = true;
+    downloads = true;
+    homeDirs = [
+      ".tor project"
+      ".cache/tor project"
+    ];
+    homeDirsRo = desktopRo;
+  };
 }

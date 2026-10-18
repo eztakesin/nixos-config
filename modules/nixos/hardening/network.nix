@@ -28,6 +28,9 @@ in
       "ipv6.dhcp-send-hostname" = false;
     };
   };
+  # NetworkManager pulls in ModemManager (mkDefault in nixpkgs networkmanager.nix). This laptop has no
+  # cellular modem; one daemon less that probes serial and USB devices.
+  networking.modemmanager.enable = false;
   networking.wireless.iwd = {
     enable = true;
     settings = {
@@ -44,20 +47,36 @@ in
   networking.tempAddresses = "enabled";
 
   # ── DNS ──────────────────────────────────────────────────────────────────────
-  # systemd-resolved talks plain DNS to Quad9 for *all* domains (DHCP-pushed resolvers are not used).
-  # With mihomo up, every port-53 query is redirected into mihomo's DNS (fake-ip) by the TUN dns-hijack,
-  # which is what makes domain-based routing work — so DNS-over-TLS must stay OFF here (DoT on 853 would
-  # bypass the hijack). With mihomo down, this is plain DNS straight to Quad9.
+  # systemd-resolved sends every query to Quad9 (resolvers pushed by DHCP are not used). Two modes, chosen
+  # at build time by whether the proxy profile secrets/mihomo.yaml exists:
+  #   - No proxy profile: DNS-over-TLS to Quad9, the certificate checked against dns.quad9.net. If port 853
+  #     is blocked, name resolution fails instead of falling back to plain DNS.
+  #   - Proxy profile present: plain port-53 queries, which the TUN's dns-hijack hands to mihomo's own
+  #     resolver (fake-ip, what makes domain-based routing rules work); mihomo forwards them encrypted (DoH)
+  #     to the resolvers in its profile. DNS-over-TLS must stay off in this mode: port-853 traffic would
+  #     bypass the hijack. If mihomo is stopped, these queries leave unencrypted, unless the kill-switch
+  #     (hardening/killswitch.nix) is on, which then drops them.
+  # DNSSEC: Quad9 validates signatures upstream. Local validation stays off: mihomo's fake-ip answers are
+  # synthetic and carry no signatures.
+  # https://www.freedesktop.org/software/systemd/man/latest/resolved.conf.html  https://www.quad9.net/service/service-addresses-and-features/
   services.resolved = {
     enable = true;
     settings.Resolve = {
-      DNS = [
-        "9.9.9.9"
-        "149.112.112.112"
-        "2620:fe::fe"
-      ];
+      DNS =
+        if haveMihomo then
+          [
+            "9.9.9.9"
+            "149.112.112.112"
+            "2620:fe::fe"
+          ]
+        else
+          [
+            "9.9.9.9#dns.quad9.net"
+            "149.112.112.112#dns.quad9.net"
+            "2620:fe::fe#dns.quad9.net"
+          ];
       Domains = [ "~." ];
-      DNSOverTLS = false;
+      DNSOverTLS = !haveMihomo;
       DNSSEC = false;
       MulticastDNS = false; # no local-name chatter
       LLMNR = false;

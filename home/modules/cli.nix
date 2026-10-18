@@ -2,9 +2,26 @@
 # configured through its Home-Manager module; the fish aliases in fish.nix map the classic names onto
 # these (ls→eza, du→dust, curl→xh, ping→gping, mtr→trip, tar→ouch, jq→jaq, fzf→sk, nmap→rustscan).
 # Catppuccin Latte theming for bat/btop/yazi lives in theme.nix (pinned upstream theme files, no IFD).
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
+let
+  # zellij starts by itself only in terminals of the graphical session (WAYLAND_DISPLAY/DISPLAY set), never
+  # on a text-console login, and never nested. Same generated script as Home-Manager's shell integration.
+  zellij = lib.getExe config.programs.zellij.finalPackage;
+in
 {
   programs = {
+    fish.interactiveShellInit = ''
+      if set -q WAYLAND_DISPLAY; or set -q DISPLAY
+          if test "$TERM" != "dumb"
+              eval (${zellij} setup --generate-auto-start fish | string collect)
+          end
+      end
+    '';
+    bash.initExtra = ''
+      if [[ -n "''${WAYLAND_DISPLAY:-}''${DISPLAY:-}" && "$TERM" != "dumb" ]]; then
+          eval "$(${zellij} setup --generate-auto-start bash)"
+      fi
+    '';
     bat.enable = true;
     btop = {
       enable = true;
@@ -126,8 +143,10 @@
     ranger.enable = true;
     zellij = {
       enable = true;
-      enableBashIntegration = true;
-      enableFishIntegration = true;
+      # Home-Manager's shell integration starts zellij in EVERY interactive shell, a text-console login
+      # included. It is replaced by the init below, which only starts it in the graphical session.
+      enableBashIntegration = false;
+      enableFishIntegration = false;
       settings = {
         theme = "catppuccin-latte";
         mouse_mode = true;

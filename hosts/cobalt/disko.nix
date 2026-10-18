@@ -5,8 +5,9 @@
 #   ├─ ESP        FAT32   1G   → /boot (+ installer      NO partition table. The whole device is the LUKS2
 #   │                           boot entry)              data area; the header is DETACHED → USB "reserved".
 #   ├─ reserved   raw    32M   LUKS2 header               └─ LVM VG "vg"
-#   ├─ installer  raw    16G   installer ISO image            ├─ swap  8G   (inside the LUKS container)
+#   ├─ installer  raw    16G   rescue system (ISO image)      ├─ swap  8G   (inside the LUKS container)
 #   └─ interop    exFAT  rest  cross-OS files + VeraCrypt      └─ root  rest btrfs: @ / · @home · @nix · @persist
+#                                                                              · @flatpak
 #
 # Device identity: the NVMe is referenced by its hardware id (/dev/disk/by-id/…, from
 # my/private.nix) — it carries no partition table, no label and no LUKS header, so nothing on it identifies
@@ -22,8 +23,8 @@
 #    (otherwise cryptsetup would create the "header" as a plain file under /dev in RAM).
 #  - disko's "already formatted?" check cannot see a headerless data area, so `--mode format` or
 #    `destroy,format,mount` must run exactly ONCE (disko PR #1286 still open). Afterwards use `--mode mount`.
-#  - Because disko formats the USB key, the FIRST install boots from a temporary dd'd installer stick;
-#    scripts/install.sh then populates the key's own installer partition.
+#  - Because disko formats the USB key, the install boots from a separate, dd'd installer stick;
+#    scripts/install.sh then writes the anonymous rescue system (installer/rescue.nix) to the key stick.
 #  - FIDO2 and recovery-key enrollment are done by hand against the HEADER partition (disko's enroll
 #    options do not pass --header):
 #      systemd-cryptenroll --fido2-device=auto /dev/disk/by-partlabel/disk-a-usb-reserved
@@ -63,8 +64,8 @@ in
           installer = {
             priority = 3;
             size = "16G";
-            # Raw partition: scripts/install.sh writes the installer ISO image (iso9660, volume id
-            # COBALT_INSTALL) into it, so the stage-1 of the installer finds it by label. No filesystem is
+            # Raw partition: scripts/install.sh writes the rescue system's ISO image (iso9660, volume id
+            # NIXOS_RESCUE) into it, so the rescue system's stage 1 finds it by label. No filesystem is
             # created here and nothing mounts it in the installed system.
           };
           interop = {
@@ -127,6 +128,9 @@ in
           size = "8G"; # no hibernation (protectKernelImage), so RAM-sized swap is unnecessary; zram supplements
           content = {
             type = "swap";
+            # A fresh random key at every boot (plain dm-crypt over the LV, key never stored): what was swapped
+            # out during one session is unreadable afterwards, even with the disk unlocked.
+            randomEncryption = true;
             discardPolicy = "both";
             resumeDevice = false;
           };
@@ -151,7 +155,15 @@ in
               };
               "@persist" = {
                 mountpoint = "/persist";
-                mountOptions = common;
+                # Persisted state is data, never programs. The bind mounts impermanence makes from here inherit
+                # these flags (mount(8): a bind mount keeps the mount options of the original).
+                mountOptions = common ++ [ "nodev" "nosuid" "noexec" ];
+              };
+              # System-wide Flatpak apps and runtimes. Flatpak runs programs from here, so it cannot sit under
+              # the noexec /persist; a subvolume of its own also keeps it out of the per-boot root reset.
+              "@flatpak" = {
+                mountpoint = "/var/lib/flatpak";
+                mountOptions = common ++ [ "nodev" "nosuid" ];
               };
             };
             # Read-only blank snapshot of @, restored on every boot (modules/nixos/impermanence.nix).

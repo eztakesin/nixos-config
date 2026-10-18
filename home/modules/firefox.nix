@@ -23,23 +23,10 @@ in
 {
   programs.firefox = {
     enable = true;
-    package = pkgs.firefox;
+    # Firefox itself is installed system-wide inside its bubblewrap sandbox, together with its enterprise
+    # policies (modules/nixos/hardening/sandbox.nix); Home-Manager only manages the profile.
+    package = null;
     configPath = ".config/mozilla/firefox"; # XDG location (HM default changed; pinned explicitly)
-
-    # Enterprise policies: the parts user.js cannot express.
-    policies = {
-      DisableTelemetry = true;
-      DisableFirefoxStudies = true;
-      DisablePocket = true;
-      DontCheckDefaultBrowser = true;
-      ExtensionSettings = {
-        # uBlock Origin, pinned installed (arkenfox's recommended content blocker)
-        "uBlock0@raymondhill.net" = {
-          installation_mode = "force_installed";
-          install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
-        };
-      };
-    };
 
     profiles.default = {
       isDefault = true;

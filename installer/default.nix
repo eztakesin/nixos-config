@@ -2,6 +2,8 @@
 # - carries the FULL cobalt system closure in its store (isoImage.storeContents) plus the generated disko
 #   scripts, so install.sh's default mode (`nixos-install --system`, a store copy) needs no network;
 # - ships disko, cryptsetup/systemd-cryptenroll, sbctl, age/sops and scripts/install.sh;
+# - carries the anonymous rescue system (installer/rescue.nix) that install.sh writes to the key stick —
+#   this image itself holds personal data and stays OFF the key stick;
 # - uses the "new kernel" ISO profile (linuxPackages_latest ≥ 7.1 → in-tree MT7902 Wi-Fi) without ZFS.
 # Build: nix build .#images.installer  (x86_64-linux builder). Flash: scripts/flash-usb.sh <iso> <device>.
 # NOTE: the embedded closure must match the real target — build the image from a path reference that
@@ -17,6 +19,7 @@
 }:
 let
   cobalt = self.nixosConfigurations.cobalt;
+  rescue = self.nixosConfigurations.rescue.config;
   # Identity of the installer UKI in the systemd-boot menu (boot.c, type #2 entries: title = PRETTY_NAME,
   # version = VERSION_ID, sort key = IMAGE_ID). The NixOS generations carry lanzaboote's sort key and
   # loader.conf keeps `default nixos-*`, so this entry is listed but never selected by default.
@@ -24,7 +27,7 @@ let
     NAME="cobalt installer"
     ID=cobalt-installer
     IMAGE_ID=cobalt-installer
-    PRETTY_NAME="cobalt installer (recovery)"
+    PRETTY_NAME="cobalt installer"
     VERSION_ID="${config.system.nixos.label}"
   '';
 in
@@ -41,22 +44,25 @@ in
     volumeID = "COBALT_INSTALL";
     squashfsCompression = "zstd -Xcompression-level 6";
     storeContents = [ cobalt.config.system.build.toplevel ];
-    # The (unsigned) UKI, outside the store at /boot/cobalt-installer.efi on the medium, where
-    # scripts/install.sh step 7 reads it from /iso/boot/. Kernel + initrd are thereby on the medium twice.
+    # The anonymous rescue system (installer/rescue.nix) that install.sh step 7 writes to the key stick: its
+    # ISO image for the installer partition and its (unsigned) UKI for the ESP. Plain files on the medium,
+    # outside the squashfs, read from /iso/rescue/.
     contents = [
       {
-        source = "${config.system.build.uki}/${config.system.boot.loader.ukiFile}";
-        target = "/boot/${config.system.boot.loader.ukiFile}";
+        source = "${rescue.system.build.isoImage}/iso/${rescue.image.baseName}.iso";
+        target = "/rescue/rescue.iso";
+      }
+      {
+        source = "${rescue.system.build.uki}/${rescue.system.boot.loader.ukiFile}";
+        target = "/rescue/rescue.efi";
       }
     ];
   };
 
   # Unified Kernel Image of this live system (nixpkgs uki.nix → system.build.uki): kernel, initrd, command
-  # line and os-release in ONE PE that is signed as a whole. install.sh signs it with the sbctl db key and
-  # places it at EFI/Linux/cobalt-installer.efi on the key's ESP: systemd-boot auto-discovers it (type #2
-  # entry) and lanzaboote's garbage collection leaves it alone (lzbt only collects EFI/nixos/ and
-  # EFI/Linux/nixos-*). The command line is uki.nix's default,
-  # `init=<toplevel>/init <boot.kernelParams>` — the same parameters as the ISO's own GRUB entry.
+  # line and os-release in ONE PE. Used by the QEMU rehearsal to boot the installer directly
+  # (scripts/vm-rehearsal.sh, COBALT_VM_UKI); the key stick gets the rescue system's UKI instead
+  # (installer/rescue.nix). The command line is uki.nix's default, `init=<toplevel>/init <boot.kernelParams>`.
   # Build alone: nix build .#images.installer-uki
   boot.uki = {
     name = "cobalt-installer";

@@ -70,8 +70,11 @@ in
     "kernel.sysrq" = 0; # disable magic SysRq
 
     # Network-stack hardening (firewall/DNS/MAC live in network.nix — no overlapping keys there)
-    "net.ipv4.conf.all.rp_filter" = 1;
-    "net.ipv4.conf.default.rp_filter" = 1;
+    # Reverse-path filtering: loose (2), the systemd default. Strict mode (1) would drop the replies to the
+    # proxy's connections once mihomo's TUN routes all traffic through its own table; the nftables firewall
+    # does its own loose check with the TUN exempted (network.nix, checkReversePath).
+    "net.ipv4.conf.all.rp_filter" = 2;
+    "net.ipv4.conf.default.rp_filter" = 2;
     "net.ipv4.conf.all.accept_redirects" = false;
     "net.ipv4.conf.default.accept_redirects" = false;
     "net.ipv4.conf.all.send_redirects" = false;
@@ -92,7 +95,10 @@ in
     "randomize_kstack_offset=1"
     "vsyscall=none"
     "debugfs=off"
-    "lockdown=confidentiality" # Secure Boot pairs with this; blocks reading kernel memory
+    # Inactive on the stock kernel: nixpkgs builds it without the lockdown LSM
+    # (pkgs/os-specific/linux/kernel/common-config.nix: SECURITY_LOCKDOWN_LSM = no). It takes effect with
+    # the self-compiled `hardenedKernel` above, which enables SECURITY_LOCKDOWN_LSM(_EARLY).
+    "lockdown=confidentiality"
   ];
 
   # ── security.* ────────────────────────────────────────────────────────────────

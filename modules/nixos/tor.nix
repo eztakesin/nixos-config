@@ -5,7 +5,7 @@
 # Interaction with mihomo: with the TUN active, Tor's own connections to guard relays leave through the
 # proxy like everything else (the guard sees the proxy exit, the proxy exit sees a Tor handshake). To send
 # Tor directly instead, add `PROCESS-NAME,tor,DIRECT` to the mihomo rules.
-{ pkgs, ... }:
+{ mypkgs, ... }:
 {
   services.tor = {
     enable = true;
@@ -16,5 +16,6 @@
     };
   };
 
-  environment.systemPackages = [ pkgs.tor-browser ];
+  # Tor Browser inside its bubblewrap sandbox (pkgs/default.nix, hardening/sandbox.nix).
+  environment.systemPackages = [ mypkgs.tor-browser-bwrap ];
 }

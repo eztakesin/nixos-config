@@ -9,8 +9,12 @@
     execWheelOnly = true;
   };
 
-  # Default umask for login sessions (homes are 0700 via users.nix homeMode).
+  # Default umask 077 for every session (console, SDDM/Plasma, the systemd user manager, sudo): new files
+  # are private to their owner. login.defs only holds the value; pam_umask is what applies it, and NixOS
+  # does not load pam_umask unless asked (security.pam.enableUMask, off by default). Homes are 0700 via
+  # users.nix homeMode.
   security.loginDefs.settings.UMASK = "077";
+  security.pam.enableUMask = true;
 
   # Kernel-side protections against symlink/hardlink/FIFO/regular-file tricks in world-writable dirs,
   # and no dumps from setuid programs.

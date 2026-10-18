@@ -2,8 +2,8 @@
   description = "Hardened, privacy-first NixOS — FDE (LUKS2 + detached header on USB) + YubiKey FIDO2 + Secure Boot (lanzaboote) + impermanence. Host: cobalt (Acer A315-24P). Docs: https://nixos.ssf.network";
 
   inputs = {
-    # Userspace + kernel channel: unstable, because req #17 wants the latest (security fixes land first)
-    # and the kernel must be recent.
+    # Userspace + kernel channel: unstable, for the latest software (security fixes land first) and a
+    # recent kernel (the MT7902 driver needs Linux 7.1+).
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
@@ -47,7 +47,7 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-    # oxalica's Rust overlay (nightly toolchains; matches your existing kit). #17 Rust-first.
+    # oxalica's Rust overlay (nightly toolchains; matches the operator's existing kit).
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -147,14 +147,25 @@
           specialArgs = { inherit inputs my self cobaltSource; };
           modules = [ ./installer ];
         };
+
+        # Anonymous rescue system that install.sh writes to the key stick (installer/rescue.nix): no part of
+        # the configuration, so a lost stick does not tell whose it is.
+        rescue = lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [ ./installer/rescue.nix ];
+        };
       };
 
       # nix build .#images.installer  →  result/iso/cobalt-installer.iso
       images.installer = self.nixosConfigurations.installer.config.system.build.isoImage;
       # nix build .#images.installer-uki  →  result/cobalt-installer.efi — the installer's Unified Kernel
-      # Image (unsigned; scripts/install.sh signs it with sbctl onto the key's ESP). Also shipped inside the
-      # ISO at /boot/cobalt-installer.efi (installer/default.nix).
+      # Image, booted directly by the QEMU rehearsal (scripts/vm-rehearsal.sh, COBALT_VM_UKI).
       images.installer-uki = self.nixosConfigurations.installer.config.system.build.uki;
+      # The rescue system for the key stick, as an ISO and as a UKI. Both are embedded in the installer image
+      # under /rescue/; scripts/install.sh writes them to the key stick.
+      images.rescue = self.nixosConfigurations.rescue.config.system.build.isoImage;
+      images.rescue-uki = self.nixosConfigurations.rescue.config.system.build.uki;
 
       # Custom packages + per-app bubblewrap sandbox wrappers. Exposed here and injected as `mypkgs`.
       packages = forAllSystems (
@@ -190,7 +201,5 @@
 
       formatter = forAllSystems (system: (pkgsFor system).nixpkgs-fmt);
 
-      # TODO(next increment): expose the custom installer image, e.g.
-      #   images.installer = self.nixosConfigurations.installer.config.system.build.images.iso;
     };
 }

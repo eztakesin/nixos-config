@@ -1,5 +1,5 @@
-# Nix daemon policy: reproducibility, offline capability, supply-chain discipline,
-# and the self-hosted binary cache that serves our custom hardened kernel.
+# Nix daemon policy: reproducibility, offline capability, supply-chain discipline, and room for a
+# self-hosted binary cache (my.cache, empty for now) that would serve a self-compiled hardened kernel.
 # Patterns adopted from oxalica's nix-common.nix / nix-registry.nix / nix-keep-flake-inputs.nix.
 { inputs, lib, my, ... }:
 {
@@ -50,15 +50,15 @@
   nix.nixPath = [ "nixpkgs=${inputs.nixpkgs}" ];
 
   # Keep every flake input (recursively) pinned in the store so GC can't collect them and offline
-  # eval/rebuild works without a network — oxalica's nix-keep-flake-inputs trick (serves #8).
+  # eval/rebuild works without a network — oxalica's nix-keep-flake-inputs trick.
   system.extraDependencies =
     let
       collect = input: [ input ] ++ builtins.concatMap collect (builtins.attrValues (input.inputs or { }));
     in
     builtins.concatMap collect (builtins.attrValues (builtins.removeAttrs inputs [ "self" ]));
 
-  # GC + store optimise. Aggressive-ish GC also shrinks the /nix/store "software history" an examiner
-  # could read (data-minimization, D13 — though impermanence does the heavy lifting). Prefer scheduled
+  # GC + store optimise. Regular GC also shrinks the /nix/store record of software that was ever installed
+  # (data minimization; impermanence does the heavy lifting). Prefer scheduled
   # `nix store optimise` over auto-optimise-store (the latter has had store-corruption edge cases).
   nix.gc = {
     automatic = true;

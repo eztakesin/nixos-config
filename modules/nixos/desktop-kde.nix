@@ -54,6 +54,11 @@
 
   # No network service discovery from the desktop (mDNS is also off in resolved).
   services.avahi.enable = false;
+
+  # Location service off. Plasma enables geoclue (nixpkgs plasma6.nix, mkDefault); whenever an app asks for
+  # the location it sends the Wi-Fi networks around the laptop (their BSSIDs) to an online lookup service
+  # (beacondb.net). Night Color then needs a manual location or fixed times.
+  services.geoclue2.enable = false;
   services.printing.enable = false; # enable per-need
 
   # The Plasma module enables speech-dispatcher (screen-reader TTS). It pulls espeak-ng + mbrola + ~650 MB of

@@ -48,7 +48,8 @@ in
       "/var/lib/bluetooth" # pairings: headphones, keyboard, mouse
       "/var/lib/iwd" # Wi-Fi network profiles
       "/etc/NetworkManager/system-connections"
-      "/var/log" # bounded journal, see below
+      # /var/lib/flatpak is NOT here: /persist is mounted noexec (hardening), which every bind mount below
+      # inherits, and Flatpak executes the apps it stores. It gets its own subvolume (hosts/cobalt/disko.nix).
       {
         directory = "/var/lib/private";
         mode = "0700";
@@ -57,11 +58,11 @@ in
     files = [ "/etc/machine-id" ];
   };
 
-  # Journal: persistent but bounded — enough for auditing, not an unbounded history.
-  # Set Storage = "volatile" for RAM-only logs.
+  # Journal in RAM only (/run/log/journal): nothing is logged to disk, and the log of a session is gone at
+  # shutdown. Cost: `journalctl -b -1` (the previous boot) shows nothing. To debug a problem that spans a
+  # reboot, set Storage = "persistent" for a while and add "/var/log" to the directories above.
   services.journald.settings.Journal = {
-    Storage = "persistent";
-    SystemMaxUse = "256M";
-    MaxRetentionSec = "14day";
+    Storage = "volatile";
+    RuntimeMaxUse = "128M";
   };
 }

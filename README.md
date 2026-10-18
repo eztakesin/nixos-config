@@ -17,9 +17,10 @@ package list, and the runbooks for installation, secrets and a rehearsal in a vi
 | `flake.nix` | inputs, the host factory, the installer image outputs |
 | `my/` | placeholders for identity and disk ids; the real values go in the git-ignored `my/private.nix` |
 | `hosts/cobalt/` | the laptop: hardware support and the disk layout (disko) |
-| `modules/nixos/` | the hardened module set: boot chain, impermanence, network, sandboxing, users, desktop |
+| `modules/nixos/` | the hardened module set: boot chain, impermanence, network, sandboxing, service hardening, users, desktop |
 | `home/` | the operator's Home-Manager profile |
-| `installer/` | the offline installer image (ISO and its UKI) |
+| `pkgs/` | bubblewrap sandbox wrappers for the browsers and the document viewer |
+| `installer/` | the offline installer image, and the anonymous rescue system it writes to the key stick |
 | `scripts/` | `flash-usb.sh` (macOS/Linux), `install.sh`, `vm-rehearsal.sh` |
 | `secrets/` | sops-encrypted secrets |
 | `example.CM.min.yaml` | skeleton of the mihomo profile that `secrets/mihomo.yaml` holds |
