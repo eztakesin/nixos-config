@@ -95,10 +95,11 @@ in
     "randomize_kstack_offset=1"
     "vsyscall=none"
     "debugfs=off"
-    # Inactive on the stock kernel: nixpkgs builds it without the lockdown LSM
-    # (pkgs/os-specific/linux/kernel/common-config.nix: SECURITY_LOCKDOWN_LSM = no). It takes effect with
-    # the self-compiled `hardenedKernel` above, which enables SECURITY_LOCKDOWN_LSM(_EARLY).
-    "lockdown=confidentiality"
+    # NO `lockdown=` here. Since nixpkgs 02c087f (October 2026) the stock kernel is built with the lockdown
+    # LSM, and in lockdown mode it refuses the kernel modules of the initrd (nvme, xhci, usb_storage: "Load
+    # Kernel Modules" fails with "Operation not permitted"), so the disk never appears and the system cannot
+    # boot — found by the VM rehearsal of 2026-10-24; on the earlier kernel the parameter was simply ignored.
+    # Lockdown needs modules signed with a key the kernel trusts: part of the self-compiled kernel plan.
   ];
 
   # ── security.* ────────────────────────────────────────────────────────────────

@@ -103,7 +103,10 @@
         system:
         import nixpkgs {
           inherit system;
-          overlays = [ inputs.rust-overlay.overlays.default ];
+          overlays = [
+            inputs.rust-overlay.overlays.default
+            (import ./pkgs/backports) # temporary: fcitx5-mozc 3.35 until the pinned nixpkgs carries it
+          ];
           # TODO: narrow to an explicit allowlist predicate for supply-chain hygiene.
           config.allowUnfree = true;
         };
@@ -128,7 +131,10 @@
             inputs.sops-nix.nixosModules.sops
             inputs.home-manager.nixosModules.home-manager
             {
-              nixpkgs.overlays = [ inputs.rust-overlay.overlays.default ];
+              nixpkgs.overlays = [
+                inputs.rust-overlay.overlays.default
+                (import ./pkgs/backports) # temporary, see pkgs/backports/default.nix
+              ];
               nixpkgs.config.allowUnfree = true; # TODO: narrow to an allowlist predicate
             }
             { networking.hostName = lib.mkDefault hostName; }
