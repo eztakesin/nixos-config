@@ -49,16 +49,36 @@ covers changing the configuration (one `nixos-rebuild`, signing included), the h
 keys (`enabled (user)`). The [status page](https://nixos.ssf.network/architecture/status/) lists what is finished, what is
 planned and the known weaknesses.
 
+## Personalising
+
+Your own values go in `my/private.nix`, which git ignores: copy the commented template
+[`my/example.private.nix`](my/example.private.nix) and change what you need. It is merged over
+[`my/default.nix`](my/default.nix) key by key, so a few lines are enough. For the desktop, for example:
+
+```nix
+{
+  desktop = {
+    iconTheme = "Zafiro-icons-Dark";
+    cursor = { fill = "#5BCEFA"; outline = "#F5A9B8"; };
+    scale = 1.5;
+    clock = { format = "12h"; seconds = false; lockScreen = "h:mm AP"; };
+  };
+}
+```
+
+The [personalisation page](https://nixos.ssf.network/reference/personalisation/) lists every desktop setting with
+its default: theme, icons, cursor, wallpaper, display scale, clocks, power, screen locking, session and dock.
+
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `flake.nix` | inputs, the host factory, the installer image outputs |
-| `my/` | placeholders for identity and disk ids; the real values go in the git-ignored `my/private.nix` |
+| `my/` | placeholders for identity and disk ids, and the desktop's defaults; your values go in the git-ignored `my/private.nix` (template: `my/example.private.nix`) |
 | `hosts/cobalt/` | the laptop: hardware support and the disk layout (disko) |
 | `modules/nixos/` | the hardened module set: boot chain, impermanence, network, sandboxing, service hardening, users, desktop |
 | `home/` | the operator's Home-Manager profile |
-| `pkgs/` | bubblewrap sandbox wrappers for the browsers and the document viewer |
+| `pkgs/` | bubblewrap sandbox wrappers for the browsers and the document viewer; the Itchy theme and the macOS cursor |
 | `installer/` | the offline installer image, and the anonymous rescue system it writes to the key stick |
 | `scripts/` | `flash-usb.sh` (macOS/Linux), `install.sh`, `vm-rehearsal.sh`, `sync-key-stick.sh` (the spare key stick; installed as a command) |
 | `secrets/` | sops-encrypted secrets |

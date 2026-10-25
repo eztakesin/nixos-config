@@ -18,16 +18,71 @@
 #  - Power on AC: no sleep, no dimming, no blank screen; no automatic screen lock (locking after sleep stays).
 #  - Every login starts with an empty session. Privacy: no file indexing, no recent-files history, X11 apps
 #    cannot read keys typed into other apps, and the day-night cycle runs on fixed times, not on a location.
-{ pkgs, lib, ... }:
+# The personal choices (theme, icons, cursor, wallpaper, scale, clock, power, locking, session, dock, tiling gap,
+# floating apps, global menu, app desktops) come from my.desktop: defaults in my/default.nix, changes in
+# my/private.nix. The privacy settings are fixed here.
+{ pkgs, lib, my, ... }:
 let
-  # The Mac's wallpaper, an illustration in the operator's public nix-darwin repository, pinned to the commit
-  # that added it, so that both machines show the same picture.
-  wallpaper = pkgs.fetchurl {
-    name = "wallpaper.png";
-    url = "https://raw.githubusercontent.com/eztakesin/nix-darwin-kickstarter/14d9f68d5208924a296f162db197bc59a02dbf1b/macbook/dotfiles/wallpapers/wallpaper.png";
-    hash = "sha256-I7MVmq46VeJ/6M2x8jUQt3tfnQtbz2ZbTh+GkoyPN9U=";
-  };
+  d = my.desktop;
+  # A download { url; hash; } (the default: the Mac's wallpaper, an illustration in the operator's public
+  # nix-darwin repository, pinned to the commit that added it), or a file.
+  wallpaper = if builtins.isAttrs d.wallpaper then pkgs.fetchurl d.wallpaper else d.wallpaper;
   kscreenDoctor = "${pkgs.kdePackages.libkscreen}/bin/kscreen-doctor";
+  kconfig = "${pkgs.kdePackages.kconfig}/bin";
+
+  # The lock screen with d.clock.lockScreen as its time format. Plasma 6.8 takes the lock screen from the desktop
+  # shell package, not from the global theme (kscreenlocker greeter/greeterapp.cpp: loadPackage("Plasma/Shell"),
+  # "lockscreenmainscript"), and its clock prints the locale's short time format, which has no seconds, not even
+  # in C. Plasma looks for shell packages in the home first, so the installed shell is mirrored there, unchanged
+  # but for the clock: a copy of the Breeze one with a fixed format (its QML module prefers the compiled copy, so
+  # the file cannot be patched in place). Built from the same plasma-desktop, so it follows Plasma updates.
+  shellWithClock = pkgs.runCommand "plasma-shell-lockscreen-clock" { } ''
+    cp -r ${pkgs.kdePackages.plasma-desktop}/share/plasma/shells/org.kde.plasma.desktop $out
+    chmod -R u+w $out
+    lock=$out/contents/lockscreen
+    cp ${pkgs.kdePackages.plasma-workspace}/lib/qt-6/qml/org/kde/breeze/components/Clock.qml $lock/FormattedClock.qml
+    chmod u+w $lock/FormattedClock.qml
+    substituteInPlace $lock/FormattedClock.qml \
+      --replace-fail 'Qt.formatTime(timeSource.dateTime, Qt.locale(), Locale.ShortFormat)' \
+                     'Qt.formatTime(timeSource.dateTime, ${builtins.toJSON d.clock.lockScreen})' \
+      --replace-fail 'trackSeconds: Qt.locale().timeFormat(Locale.ShortFormat).includes("s")' 'trackSeconds: true'
+    substituteInPlace $lock/LockScreenUi.qml --replace-fail '        Clock {' '        FormattedClock {'
+  '';
+
+  # The gap between tiled windows (d.tileGap, in pixels). KWin 6.8 keeps it per virtual desktop and per screen,
+  # under a key derived from the screen's EDID (src/tiles/tilemanager.cpp, readSettings), so no config file can set
+  # it ahead. This KWin script sets it on every screen and desktop when KWin starts and whenever either changes
+  # (scripting API: workspace.rootTile(output, desktop).padding); KWin then saves it.
+  tileGapScript = {
+    "kwin/scripts/tile-gap/metadata.json".text = builtins.toJSON {
+      KPackageStructure = "KWin/Script";
+      KPlugin = {
+        Id = "tile-gap";
+        Name = "Tile gap";
+        Description = "Sets the gap between tiled windows on every screen and virtual desktop";
+        License = "GPL-3.0-or-later";
+        EnabledByDefault = false;
+      };
+      X-Plasma-API = "javascript";
+      X-Plasma-MainScript = "code/main.js";
+    };
+    "kwin/scripts/tile-gap/contents/code/main.js".text = ''
+      const padding = Number(readConfig("padding", 0));
+      function apply() {
+          for (const output of workspace.screens) {
+              for (const desktop of workspace.desktops) {
+                  const tile = workspace.rootTile(output, desktop);
+                  if (tile && tile.padding !== padding) {
+                      tile.padding = padding;
+                  }
+              }
+          }
+      }
+      apply();
+      workspace.screensChanged.connect(apply);
+      workspace.desktopsChanged.connect(apply);
+    '';
+  };
 
   # Desktop n (1–10) on Super+n; Super+Shift+n moves the window there (Shift+digit as KDE records it, US layout).
   digits = [ "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" ];
@@ -35,6 +90,11 @@ let
   perDesktop = f: lib.listToAttrs (lib.imap1 f digits);
 in
 {
+  # The tile-gap KWin script and the shell with the lock-screen clock (both above), in ~/.local/share.
+  xdg.dataFile = tileGapScript // {
+    "plasma/shells/org.kde.plasma.desktop".source = shellWithClock;
+  };
+
   programs.plasma = {
     enable = true;
 
@@ -42,25 +102,19 @@ in
     workspace = {
       # Itchy as the base: applying it sets its colour scheme, Plasma style and window decoration; the entries
       # below then replace its cursor (WhiteSur, not installed), icons and wallpaper.
-      lookAndFeel = "Itchy";
-      colorScheme = "Itchy";
-      theme = "Itchy";
-      windowDecorations = {
-        library = "org.kde.kwin.aurorae";
-        theme = "__aurorae__svg__Itchy";
-      };
-      iconTheme = "Zafiro-icons-Light"; # the light variant (it inherits breeze, the other one breeze-dark)
-      cursor = {
-        theme = "macOS-TransFlag";
-        size = 24;
-      };
+      lookAndFeel = d.lookAndFeel;
+      colorScheme = d.colorScheme;
+      theme = d.plasmaStyle;
+      windowDecorations = d.windowDecoration;
+      iconTheme = d.iconTheme; # Zafiro-icons-Light: the variant that inherits breeze, the other one breeze-dark
+      cursor = { inherit (d.cursor) theme size; };
       inherit wallpaper;
     };
     kscreenlocker = {
       appearance.wallpaper = wallpaper;
-      # On request: no automatic lock after idle time. KDE has one setting for AC and battery, so this holds on
-      # battery too. Locking after sleep stays on, and Meta+Ctrl+L locks by hand.
-      autoLock = false;
+      # Off by default, on request: no automatic lock after idle time. KDE has one setting for AC and battery, so
+      # this holds on battery too. Locking after sleep stays on, and Meta+Ctrl+L locks by hand.
+      autoLock = d.autoLock;
       lockOnResume = true;
     };
 
@@ -71,19 +125,28 @@ in
         widgets = [
           "org.kde.plasma.kickoff"
           { pager.general.displayedText = "desktopNumber"; } # the desktops as numbers, like i3's workspaces
+        ]
+        # The application's menus in the top bar, as on macOS (KDE and other Qt applications; GTK, Firefox and
+        # Electron keep theirs in the window).
+        ++ lib.optional d.globalMenu "org.kde.plasma.appmenu"
+        ++ [
           "org.kde.plasma.panelspacer"
           "org.kde.plasma.systemtray"
           {
             digitalClock = {
               time = {
-                format = "24h";
-                showSeconds = "always";
+                inherit (d.clock) format;
+                showSeconds = if d.clock.seconds then "always" else "never";
               };
-              date = {
-                enable = true;
-                format = "longDate";
-                position = "besideTime";
-              };
+              date =
+                if d.clock.date == null then
+                  { enable = false; }
+                else
+                  {
+                    enable = true;
+                    format = d.clock.date;
+                    position = "besideTime";
+                  };
             };
           }
         ];
@@ -97,18 +160,8 @@ in
         height = 56;
         widgets = [
           {
-            iconTasks.launchers = [
-              "applications:org.kde.dolphin.desktop"
-              "applications:firefox.desktop"
-              "applications:tor-browser.desktop" # the desktop file of the bwrap wrapper (pkgs/default.nix)
-              "applications:kitty.desktop"
-              "applications:thunderbird.desktop"
-              "applications:codium.desktop"
-              "applications:org.signal.Signal.desktop"
-              "applications:im.riot.Riot.desktop"
-              "applications:org.telegram.desktop.desktop"
-              "applications:systemsettings.desktop"
-            ];
+            # tor-browser.desktop is the bwrap wrapper's (pkgs/default.nix); the messengers' come from Flatpak.
+            iconTasks.launchers = map (app: "applications:${app}") d.dock;
           }
         ];
       }
@@ -125,45 +178,60 @@ in
       scripts.polonium.enable = true;
     };
 
-    # From the i3 config's `for_window [class=…] move to workspace N`, for the apps still in use: the app opens on
-    # its desktop and can be moved from there (i3 had Telegram on 2, Firefox on 3, Code on 8). plasma-manager
-    # gives the desktops the fixed ids Desktop_1 … Desktop_10, which the rules refer to.
-    window-rules = [
-      {
-        description = "Messaging on desktop 2";
-        match.window-class = { value = "(?i)(signal|element|telegram)"; type = "regex"; };
-        apply.desktops = { value = "Desktop_2"; apply = "initially"; };
-      }
-      {
-        description = "Firefox on desktop 3";
-        match.window-class = { value = "(?i)^firefox"; type = "regex"; };
-        apply.desktops = { value = "Desktop_3"; apply = "initially"; };
-      }
-      {
-        description = "VSCodium on desktop 8";
-        match.window-class = { value = "(?i)(vscodium|codium)"; type = "regex"; };
-        apply.desktops = { value = "Desktop_8"; apply = "initially"; };
-      }
-    ];
+    # Apps opened on a fixed desktop (d.appDesktops; empty by default), like i3's `for_window … move to workspace N`.
+    # The app opens there even when another desktop is shown, which looked as if Flatpak apps opened only on an empty
+    # desktop. plasma-manager gives the desktops the fixed ids Desktop_1 … Desktop_10.
+    window-rules = map (rule: {
+      description = "${rule.match} on desktop ${toString rule.desktop}";
+      match.window-class = {
+        value = rule.match;
+        type = "regex";
+      };
+      apply.desktops = {
+        value = "Desktop_${toString rule.desktop}";
+        apply = "initially";
+      };
+    }) d.appDesktops;
+    # plasma-manager writes no rules file for an empty list, so the three rules of the earlier configuration
+    # (messaging on 2, Firefox on 3, VSCodium on 8) would stay. Removed once, by their names; other rules stay.
+    startup.startupScript.dropOldWindowRules = lib.mkIf (d.appDesktops == [ ]) {
+      text = ''
+        f=kwinrulesrc
+        keep=""
+        n=0
+        for id in $(${kconfig}/kreadconfig6 --file "$f" --group General --key rules | tr ',' ' '); do
+          case "$(${kconfig}/kreadconfig6 --file "$f" --group "$id" --key Description)" in
+            "Messaging on desktop 2" | "Firefox on desktop 3" | "VSCodium on desktop 8") ;;
+            *)
+              keep="''${keep:+$keep,}$id"
+              n=$((n + 1))
+              ;;
+          esac
+        done
+        ${kconfig}/kwriteconfig6 --file "$f" --group General --key rules "$keep"
+        ${kconfig}/kwriteconfig6 --file "$f" --group General --key count "$n"
+        ${pkgs.dbus}/bin/dbus-send --session --type=method_call --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure
+      '';
+    };
 
     configFile.kwinrc.Wayland.InputMethod = "/run/current-system/sw/share/applications/org.fcitx.Fcitx5.desktop";
 
-    # Power on AC, on request: never sleep, never dim, never blank the screen. Hibernation cannot happen at all:
-    # swap gets a new random key at every boot, and protectKernelImage disables it (hardening/kernel.nix).
-    powerdevil.AC = {
+    # Power on AC (keepAwakeOnAC): never sleep, never dim, never blank the screen. Hibernation cannot happen at
+    # all: swap gets a new random key at every boot, and protectKernelImage disables it (hardening/kernel.nix).
+    powerdevil.AC = lib.mkIf d.keepAwakeOnAC {
       autoSuspend.action = "nothing";
       dimDisplay.enable = false;
       turnOffDisplay.idleTimeout = "never";
     };
 
-    # Every login starts empty: no applications reopened from the previous session.
-    session.sessionRestore.restoreOpenApplicationsOnLogin = "startWithEmptySession";
+    # restoreSession false: every login starts empty, no applications reopened from the previous session.
+    session.sessionRestore.restoreOpenApplicationsOnLogin =
+      if d.restoreSession then "onLastLogout" else "startWithEmptySession";
 
-    # Lock-screen clock: Breeze's lock screen prints the time in the locale's short format, and seconds only
-    # when that format has them (org/kde/breeze/components/Clock.qml in plasma-workspace 6.8). The C locale's
-    # short time format is HH:mm:ss and its long date "dddd, d MMMM yyyy", so LC_TIME=C.UTF-8 gives 24-hour
-    # time with seconds and the long date there, and in the other KDE applications.
-    configFile."plasma-localerc".Formats.LC_TIME = "C.UTF-8";
+    # The session's LC_TIME (Plasma exports [Formats] of plasma-localerc at login); empty means the default
+    # locale. The lock-screen clock has its own format (pkgs/itchy-kde-theme.nix: the locale's short format has no
+    # seconds, not even in C).
+    configFile."plasma-localerc".Formats.LC_TIME = if d.timeLocale == null then "" else d.timeLocale;
 
     # Privacy: no file indexing (Baloo); no history of opened files: the activity manager's "do not remember"
     # (what-to-remember 2, kactivitymanagerd_plugins_settings.kcfg), KDE's recent documents, GTK's
@@ -190,17 +258,24 @@ in
       Location.Automatic = false;
     };
 
-    # Display scale 125 % on the built-in panel, set at each login: KWin keeps output settings in its own state
-    # file (kwinoutputconfig.json), which plasma-manager does not write. External screens keep their own scale.
-    startup.startupScript.displayScale = {
+    # Display scale of the built-in panel (d.scale, 1.25 = 125 %), set at each login: KWin keeps output settings
+    # in its own state file (kwinoutputconfig.json), which plasma-manager does not write. External screens keep
+    # their own scale.
+    startup.startupScript.displayScale = lib.mkIf (d.scale != null) {
       text = ''
         for output in $(${kscreenDoctor} -j | ${pkgs.jq}/bin/jq -r '.outputs[] | select(.connected and .enabled) | .name | select(test("^(eDP|LVDS|DSI)"))'); do
-          ${kscreenDoctor} "output.$output.scale.1.25"
+          ${kscreenDoctor} "output.$output.scale.${builtins.toJSON d.scale}"
         done
       '';
       runAlways = true;
     };
+    # The tile-gap script (above), and the apps that open floating instead of tiled (Polonium's untile list, exact
+    # window classes): Spectacle's window, file and other portal dialogs, pinentry, the calculator. Dialogs that
+    # belong to a window (transient ones) float anyway.
+    configFile.kwinrc.Plugins.tile-gapEnabled = true;
+    configFile.kwinrc."Script-tile-gap".padding = d.tileGap;
     configFile.kwinrc."Script-polonium" = {
+      UntileWindowClasses = lib.concatStringsSep ", " d.floatingApps;
       DefaultEngine = 1; # 0 binary tree (i3), 1 half (dwm), 2 three columns, 3 pillars, 4 pager, 5 KWin
       HalfMiddleSplit = 0.5; # master area 50 %, dwm's mfact in the earlier patch
       HalfKeepMaster = true; # one window in the master area, the others in the stack

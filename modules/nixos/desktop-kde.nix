@@ -6,6 +6,12 @@ let
   flavor = my.look.flavor or "latte";
   accent = my.look.accent or "blue";
   wallpaper = "${pkgs.nixos-artwork.wallpapers."catppuccin-${flavor}"}/share/wallpapers/catppuccin-${flavor}/contents/images/nixos-wallpaper-catppuccin-${flavor}.png";
+  # The cursor in the operator's colours (my.desktop in my/default.nix and my/private.nix).
+  d = my.desktop;
+  cursor = mypkgs.cursor-macos-transflag.override {
+    cursorFill = d.cursor.fill;
+    cursorOutline = d.cursor.outline;
+  };
 in
 {
   services.desktopManager.plasma6.enable = true;
@@ -22,8 +28,8 @@ in
       settings.Users.RememberLastUser = false;
       # The desktop's cursor here too (pkgs/cursor-macos-transflag.nix).
       settings.Theme = {
-        CursorTheme = "macOS-TransFlag";
-        CursorSize = 24;
+        CursorTheme = d.cursor.theme;
+        CursorSize = d.cursor.size;
       };
     };
     defaultSession = "plasma";
@@ -33,7 +39,7 @@ in
     # The desktop's look (home/modules/plasma.nix): the Itchy global theme, the Zafiro icons and the cursor.
     mypkgs.itchy-kde-theme
     pkgs.zafiro-icons
-    mypkgs.cursor-macos-transflag
+    cursor
     ((pkgs.catppuccin-sddm.override {
       inherit flavor accent;
       font = "Noto Sans";

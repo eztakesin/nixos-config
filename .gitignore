@@ -26,6 +26,8 @@ CM.min.yaml
 
 # Operator-specific private data — never public: identity, secondary account, cache keys.
 /my/private.nix
+# A private wallpaper next to it (my.desktop.wallpaper = ./wallpaper.png).
+/my/wallpaper.*
 
 # Assistant/agent artefacts — keep the public repo free of them.
 CLAUDE.md
