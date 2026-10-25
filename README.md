@@ -39,7 +39,8 @@ audited and rebuilt from one declarative source. Every protection also states wh
 
 The installer image is built from the final configuration and installs offline; the host key is the one thing
 typed in by hand. Every step of the [install runbook](https://nixos.ssf.network/runbook/install/) says what you
-type, why, and what it protects against.
+type, why, and what it protects against. After that, the [day-to-day runbook](https://nixos.ssf.network/runbook/operations/)
+covers changing the configuration (one `nixos-rebuild`, signing included), the header backup and the spare stick.
 
 **Status:** builds, installs in a QEMU rehearsal of the real procedure, and was installed on the laptop on
 2026-10-25 (offline install, first boot to the desktop); Secure Boot is on with the laptop's own
