@@ -25,8 +25,10 @@ in
 {
   # ── USB ──────────────────────────────────────────────────────────────────────
   # Devices present at boot (boot key, internal webcam/BT, a plugged-in YubiKey) are kept; anything
-  # inserted later is blocked until allowed (`usbguard allow-device <id>` or the desktop notifier).
-  # Generate a full allow-list on the real machine with `usbguard generate-policy` and merge it here.
+  # inserted later is blocked unless a rule allows it. Rules: every Yubico device, then the exact rules for
+  # the operator's own devices from my/private.nix (`usbguard.rules`: they name serial numbers, so they stay
+  # out of the public repository). A blocked device can be admitted until it is unplugged:
+  # `sudo usbguard list-devices --blocked`, then `sudo usbguard allow-device <number>`.
   services.usbguard = {
     enable = true;
     implicitPolicyTarget = "block";
@@ -37,12 +39,29 @@ in
       "root"
       my.user.username
     ];
-    dbus.enable = true; # for usbguard-notifier / applets
+    dbus.enable = true; # for usbguard-notifier
     rules = ''
       allow id 1050:*
-    '';
+    ''
+    + (my.usbguard.rules or "");
   };
   environment.systemPackages = [ pkgs.usbguard-notifier ];
+
+  # usbguard-notifier: a desktop notice for every blocked device, with Allow and Reject buttons; Allow admits it
+  # until it is unplugged, like the command above. The package's own unit sits in share/systemd/user, where
+  # NixOS does not look, so it is declared here, for the operator only: the one account besides root allowed
+  # on the IPC socket.
+  systemd.user.services.usbguard-notifier = {
+    description = "USBGuard notifier";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    unitConfig.ConditionUser = my.user.username;
+    serviceConfig = {
+      ExecStart = "${pkgs.usbguard-notifier}/bin/usbguard-notifier";
+      Restart = "on-failure";
+    };
+  };
 
   # ── Bluetooth (kept: headphones, keyboard, mouse) ─────────────────────────────
   hardware.bluetooth = {

@@ -45,6 +45,13 @@ let
     # fcitx5 input methods to add to the profile after the public ones (rime, mozc, keyboard-us-altgr-intl),
     # by their fcitx5 names (e.g. "chewing", or "keyboard-de" for an XKB layout); also set in my/private.nix.
     inputMethods.extraItems = [ ];
+    # Extra USBGuard rules for your own USB devices (sticks, a card reader, a second YubiKey): lines of the
+    # USBGuard rule language, added after the public Yubico rule (modules/nixos/hardening/peripherals.nix).
+    # They name serial numbers, so set them in my/private.nix. To get a device's line, plug it in on the
+    # laptop and run `sudo usbguard generate-policy`; keep `id`, `serial`, `name` and `with-interface`, and
+    # drop `hash`, `parent-hash`, `via-port` and `with-connect-type`, which can tie the rule to one port.
+    # https://usbguard.github.io/documentation/rule-language.html
+    usbguard.rules = "";
     # Self-hosted binary cache (attic/harmonia). Empty = cache.nixos.org only.
     cache = {
       url = "";
