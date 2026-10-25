@@ -43,6 +43,12 @@ in
     openFiles = true;
     homeDirsRo = desktopRo ++ [ ".config/zathura" ];
   };
+
+  # The Itchy global theme: the base of the operator's desktop look (home/modules/plasma.nix).
+  itchy-kde-theme = pkgs.callPackage ./itchy-kde-theme.nix { };
+
+  # macOS-style cursors in the Mac's pointer colours (home/modules/plasma.nix, the login screen).
+  cursor-macos-transflag = pkgs.callPackage ./cursor-macos-transflag.nix { };
 }
 // lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
   # Tor Browser (x86_64 only in nixpkgs). Its state lives in "~/.tor project" (the nixpkgs package marks

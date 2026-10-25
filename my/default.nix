@@ -57,8 +57,9 @@ let
       url = "";
       publicKey = "";
     };
-    # Catppuccin flavour and accent for the desktop, the login screen and the fcitx5 candidate window
-    # (modules/nixos/desktop-kde.nix, modules/nixos/locale-fonts.nix, home/modules/plasma.nix).
+    # Catppuccin flavour and accent for the login screen and the fcitx5 candidate window
+    # (modules/nixos/desktop-kde.nix, modules/nixos/locale-fonts.nix); the desktop itself uses the Itchy theme
+    # (home/modules/plasma.nix).
     # Flavours: latte (light), frappe, macchiato, mocha (dark); accents: https://catppuccin.com/palette
     look = {
       flavor = "latte";

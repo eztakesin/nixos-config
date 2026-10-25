@@ -1,7 +1,7 @@
 # Desktop: KDE Plasma 6 on Wayland with SDDM. Wayland gives per-app input/screen
 # isolation that X11 lacks; portals (xdg-desktop-portal-kde) provide the consent prompts used by Flatpak
 # apps (hardening/sandbox.nix). Audio via PipeWire with Bluetooth codecs for the headphones.
-{ pkgs, lib, my, ... }:
+{ pkgs, lib, my, mypkgs, ... }:
 let
   flavor = my.look.flavor or "latte";
   accent = my.look.accent or "blue";
@@ -20,11 +20,20 @@ in
       # instead of holding the last name.
       theme = "catppuccin-${flavor}-${accent}";
       settings.Users.RememberLastUser = false;
+      # The desktop's cursor here too (pkgs/cursor-macos-transflag.nix).
+      settings.Theme = {
+        CursorTheme = "macOS-TransFlag";
+        CursorSize = 24;
+      };
     };
     defaultSession = "plasma";
   };
 
   environment.systemPackages = [
+    # The desktop's look (home/modules/plasma.nix): the Itchy global theme, the Zafiro icons and the cursor.
+    mypkgs.itchy-kde-theme
+    pkgs.zafiro-icons
+    mypkgs.cursor-macos-transflag
     ((pkgs.catppuccin-sddm.override {
       inherit flavor accent;
       font = "Noto Sans";
