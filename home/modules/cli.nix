@@ -167,6 +167,10 @@ in
         light_dark = "dark";
         color_align.mode = "horizontal";
         backend = "neofetch";
+        # Required by hyfetch 2.x (crates/hyfetch/src/models.rs: a bool without a serde default); without it
+        # every run stops with "missing field `pride_month_disable`". false = the pride-month animation plays
+        # once in June (the "shown" marker lives in ~/.cache, so this read-only file is never written); true = never.
+        pride_month_disable = false;
       };
     };
     tealdeer.enable = true;
