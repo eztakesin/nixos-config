@@ -17,7 +17,7 @@
 #         the anonymous rescue system onto the key stick → summary.
 # Every destructive step prints what it is about to do and asks for the exact device id.
 # STATUS: exercised in the QEMU rehearsal (https://nixos.ssf.network/runbook/vm-rehearsal/) and on the laptop
-#         (2026-10-25: offline install, first boot to the desktop).
+#         (2026-10-25: offline install, first boot to the desktop, Secure Boot on with the laptop's own keys).
 set -eu
 # Independent of the caller's umask: with 077 inherited from the shell (as when the host key was typed in
 # with `umask 077`), disko creates /mnt as 0700 and nixos-install refuses to continue ("path /mnt should

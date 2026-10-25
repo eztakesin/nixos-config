@@ -42,8 +42,8 @@ typed in by hand. Every step of the [install runbook](https://nixos.ssf.network/
 type, why, and what it protects against.
 
 **Status:** builds, installs in a QEMU rehearsal of the real procedure, and was installed on the laptop on
-2026-10-25 (offline install, first boot to the desktop); the Secure Boot enrollment on the laptop is being
-verified. The [status page](https://nixos.ssf.network/architecture/status/) lists what is finished, what is
+2026-10-25 (offline install, first boot to the desktop); Secure Boot is on with the laptop's own
+keys (`enabled (user)`). The [status page](https://nixos.ssf.network/architecture/status/) lists what is finished, what is
 planned and the known weaknesses.
 
 ## Repository layout
