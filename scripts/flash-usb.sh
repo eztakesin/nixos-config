@@ -8,7 +8,7 @@
 #          Linux:  device = /dev/sdX   (whole disk, e.g. /dev/sdb — never /dev/sdb1)
 #
 # Safety: refuses internal/non-removable disks, disks that back / or /boot, and asks you to retype the
-# device id. dd never asks anything, so this script does. STATUS: not yet exercised on hardware.
+# device id. dd never asks anything, so this script does. STATUS: used on macOS for the laptop's install (2026-10-25).
 set -eu
 
 iso=${1:-}

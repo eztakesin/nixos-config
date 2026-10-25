@@ -33,9 +33,18 @@ audited and rebuilt from one declarative source. Every protection also states wh
 
 <p align="center"><img src=".github/diagrams/disk-layout.svg" width="820" alt="The key stick with its boot files, disk header, rescue system and exchange area beside the internal disk, one encrypted area without a partition table"></p>
 
-**Status:** builds, and installs in a QEMU rehearsal of the real procedure (offline install, first boot, rescue
-system); not yet installed on hardware. The [status page](https://nixos.ssf.network/architecture/status/)
-lists what is finished, what is planned and the known weaknesses.
+## Installing
+
+<p align="center"><img src=".github/diagrams/install-flow.svg" width="820" alt="The installation in five rows: prepare on the workstation, set up the laptop firmware, run the installer (host key, device ids, disko, passphrase, YubiKey, recovery key, system copy, rescue system), then the first boot with Secure Boot"></p>
+
+The installer image is built from the final configuration and installs offline; the host key is the one thing
+typed in by hand. Every step of the [install runbook](https://nixos.ssf.network/runbook/install/) says what you
+type, why, and what it protects against.
+
+**Status:** builds, installs in a QEMU rehearsal of the real procedure, and was installed on the laptop on
+2026-10-25 (offline install, first boot to the desktop); the Secure Boot enrollment on the laptop is being
+verified. The [status page](https://nixos.ssf.network/architecture/status/) lists what is finished, what is
+planned and the known weaknesses.
 
 ## Repository layout
 
