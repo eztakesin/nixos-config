@@ -20,6 +20,7 @@
     ./locale-fonts.nix # locales, CJK fonts, fcitx5
     ./base-packages.nix # uutils ahead of GNU coreutils, base tools
     ./yubikey.nix # pcscd, ykman, age-plugin-yubikey
+    ./key-stick.nix # sync-key-stick: a spare key stick from the one in use
     ./home.nix # Home-Manager wiring for the operator
     ./messaging.nix # Signal + Element as confined Flatpaks (nix-flatpak)
     ./tor.nix # app-level Tor + Tor Browser

@@ -206,11 +206,12 @@ run_vm() {
   # the disk as removable; serial= → the USB serial number udev turns into the by-id name; bootindex=0 (boot
   # mode) → first in the fw_cfg boot order, which OVMF translates for USB storage (QemuBootOrderLib).
   # Properties checked with `-device usb-storage,help`; the drive/device split is nixos/tests/boot.nix's.
+  # id=usbkeydev lets the monitor detach the stick (device_del usbkeydev), as the spare-stick rehearsal does.
   # A usb-tablet gives the graphics window an absolute pointer (qemu-vm.nix adds one on x86 as well).
   set -- "$@" \
     -drive "if=none,id=usbkey,format=qcow2,file=$USB_IMG" \
     -device qemu-xhci,id=xhci \
-    -device "usb-storage,bus=xhci.0,drive=usbkey,removable=on,serial=$USB_SERIAL$usb_boot" \
+    -device "usb-storage,bus=xhci.0,drive=usbkey,removable=on,serial=$USB_SERIAL$usb_boot,id=usbkeydev" \
     -device usb-tablet,bus=xhci.0
 
   # The SSD: an NVMe controller with one namespace — nixos/tests/iosched.nix "nvme,serial=…,drive=…", QEMU

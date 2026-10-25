@@ -58,7 +58,7 @@ planned and the known weaknesses.
 | `home/` | the operator's Home-Manager profile |
 | `pkgs/` | bubblewrap sandbox wrappers for the browsers and the document viewer |
 | `installer/` | the offline installer image, and the anonymous rescue system it writes to the key stick |
-| `scripts/` | `flash-usb.sh` (macOS/Linux), `install.sh`, `vm-rehearsal.sh` |
+| `scripts/` | `flash-usb.sh` (macOS/Linux), `install.sh`, `vm-rehearsal.sh`, `sync-key-stick.sh` (the spare key stick; installed as a command) |
 | `secrets/` | sops-encrypted secrets |
 | `example.CM.min.yaml` | skeleton of the mihomo profile that `secrets/mihomo.yaml` holds |
 
