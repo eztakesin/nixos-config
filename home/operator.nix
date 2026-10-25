@@ -13,6 +13,8 @@
     ./modules/firefox.nix
     ./modules/cli.nix
     ./modules/theme.nix
+    ./modules/plasma.nix
+    ./modules/input-method.nix
     ./modules/rust.nix
     ./modules/vscode.nix
     ./modules/packages.nix

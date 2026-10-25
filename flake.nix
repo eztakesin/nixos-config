@@ -11,6 +11,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Declarative KDE Plasma settings for the operator's home: wallpaper, theme, panels, KWin keys.
+    # Writes the user's KDE config files key by key (kwriteconfig) instead of replacing them, so Plasma
+    # keeps working on its own settings. https://github.com/nix-community/plasma-manager
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # Declarative disk layout (partitions + LUKS2 + LVM + btrfs subvols). Single source of truth
     # the one-click installer consumes. https://github.com/nix-community/disko
     disko = {

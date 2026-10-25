@@ -8,6 +8,8 @@
     useUserPackages = true;
     backupFileExtension = "hm-backup";
     extraSpecialArgs = { inherit inputs my; };
+    # plasma-manager (flake input): KDE Plasma settings as Home-Manager options (home/modules/plasma.nix).
+    sharedModules = [ inputs.plasma-manager.homeModules.plasma-manager ];
     users.${my.user.username} = import ../../home/operator.nix;
   };
 }

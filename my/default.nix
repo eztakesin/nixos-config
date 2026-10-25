@@ -42,10 +42,20 @@ let
     # my/private.nix together with any locale it needs, so the public configuration does not list every
     # language the operator types.
     inputMethods.extraAddons = [ ];
+    # fcitx5 input methods to add to the profile after the public ones (rime, mozc, keyboard-us-altgr-intl),
+    # by their fcitx5 names (e.g. "chewing", or "keyboard-de" for an XKB layout); also set in my/private.nix.
+    inputMethods.extraItems = [ ];
     # Self-hosted binary cache (attic/harmonia). Empty = cache.nixos.org only.
     cache = {
       url = "";
       publicKey = "";
+    };
+    # Catppuccin flavour and accent for the desktop, the login screen and the fcitx5 candidate window
+    # (modules/nixos/desktop-kde.nix, modules/nixos/locale-fonts.nix, home/modules/plasma.nix).
+    # Flavours: latte (light), frappe, macchiato, mocha (dark); accents: https://catppuccin.com/palette
+    look = {
+      flavor = "latte";
+      accent = "blue";
     };
     # Opt-in features (https://nixos.ssf.network/reference/packages/): zoom, java, julia, foundry, azure, android, killSwitch.
     features = { };

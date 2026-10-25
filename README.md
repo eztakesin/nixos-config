@@ -28,6 +28,8 @@ audited and rebuilt from one declarative source. Every protection also states wh
   network to network, and Tor. [Network →](https://nixos.ssf.network/architecture/network/)
 - **Sandboxes:** browsers and the document viewer in bubblewrap, messengers in Flatpak, AppArmor profiles.
   [Applications →](https://nixos.ssf.network/architecture/applications/)
+- **Desktop:** KDE Plasma in Catppuccin with tiling after i3 and dwm, a login screen that names no accounts, and
+  input methods for Chinese, Japanese and the European languages. [Desktop and input methods →](https://nixos.ssf.network/architecture/desktop/)
 - **Every key, password and PIN** is documented with what it opens, where it lives and where it is weak.
   [Keys and secrets →](https://nixos.ssf.network/architecture/keys/)
 

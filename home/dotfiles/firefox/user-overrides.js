@@ -108,9 +108,14 @@ user_pref("keyword.enabled", false);
 user_pref("browser.toolbars.bookmarks.visibility", "never");
 user_pref("sidebar.revamp", false);
 
-/*** Fonts: Western default; Simplified-Chinese glyph convention for ambiguous CJK.
- *   (macOS system-font names from the original were dropped; Noto CJK is installed system-wide.) ***/
-user_pref("font.language.group", "x-western");
+/*** Fonts: fontconfig chooses. The generic names below hand every page to the per-language rules in
+ *   modules/nixos/locale-fonts.nix (Noto CJK SC/TC/HK/JP/KR, Sarasa Mono); text without a language
+ *   tag is treated as Simplified Chinese, so ambiguous Han characters get SC forms. Pattern from oxalica's
+ *   nixos-config (home/modules/firefox.nix, "Let our font-config choose final fonts"). ***/
+user_pref("font.language.group", "zh-CN");
+user_pref("font.name.monospace.zh-CN", "monospace");
+user_pref("font.name.sans-serif.zh-CN", "sans-serif");
+user_pref("font.name.serif.zh-CN", "serif");
 user_pref("font.cjk_pref_fallback_order", "zh-cn,zh-hk,zh-tw,ja");
 
 user_pref("_my_overrides.parrot", "END: user-overrides.js loaded");
