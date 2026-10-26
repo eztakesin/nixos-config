@@ -13,14 +13,15 @@
 #  - Shortcuts after the operator's i3 and dwm setups (Super as the modifier); the KDE defaults they collide
 #    with are moved or unbound below.
 #  - fcitx5 as KWin's input method, so it runs as the Wayland input method and not as an ordinary client.
-#  - Clock: 24-hour time with seconds and the long date, in the top bar and on the lock screen. Display scale
-#    125 % on the built-in panel.
+#  - Clock: 24-hour time with seconds and the long date, in the top bar and on the lock screen. Metric units and
+#    A4 paper. Display scale 125 % on the built-in panel.
 #  - Power on AC: no sleep, no dimming, no blank screen; no automatic screen lock (locking after sleep stays).
-#  - Every login starts with an empty session. Privacy: no file indexing, no recent-files history, X11 apps
-#    cannot read keys typed into other apps, and the day-night cycle runs on fixed times, not on a location.
-# The personal choices (theme, icons, cursor, wallpaper, scale, clock, power, locking, session, dock, tiling gap,
-# floating apps, global menu, app desktops) come from my.desktop: defaults in my/default.nix, changes in
-# my/private.nix. The privacy settings are fixed here.
+#  - Every login starts with an empty session. Privacy: no file indexing, no recent-files history, no search
+#    history, a Plasma Search that reads no personal files or browsing data, X11 apps cannot read keys typed into
+#    other apps, and the day-night cycle runs on fixed times, not on a location.
+# The personal choices (theme, icons, cursor, wallpaper, scale, clock, formats, power, locking, session, dock,
+# tiling gap, floating apps, global menu, app desktops, shake pointer) come from my.desktop: defaults in
+# my/default.nix, changes in my/private.nix. The privacy settings are fixed here.
 { pkgs, lib, my, ... }:
 let
   d = my.desktop;
@@ -90,6 +91,9 @@ let
   perDesktop = f: lib.listToAttrs (lib.imap1 f digits);
 in
 {
+  # A key that private.nix may still set from an earlier version; the merge would ignore it silently.
+  warnings = lib.optional (d ? timeLocale) "my.desktop.timeLocale is ignored: it is my.desktop.formats.LC_TIME now (my/default.nix).";
+
   # The tile-gap KWin script and the shell with the lock-screen clock (both above), in ~/.local/share.
   xdg.dataFile = tileGapScript // {
     "plasma/shells/org.kde.plasma.desktop".source = shellWithClock;
@@ -112,9 +116,19 @@ in
     };
     kscreenlocker = {
       appearance.wallpaper = wallpaper;
-      # Off by default, on request: no automatic lock after idle time. KDE has one setting for AC and battery, so
-      # this holds on battery too. Locking after sleep stays on, and Meta+Ctrl+L locks by hand.
-      autoLock = d.autoLock;
+      # d.autoLock: false (the default, on request) for no automatic lock after idle time, true for KDE's 5 minutes,
+      # or minutes. KDE has one setting for AC and battery. The daemon locks only with Autolock on and a timeout above
+      # 0 (kscreenlocker 6.8 ksldapp.cpp, updateIdleTimeout); the settings page shows the timeout alone and saves
+      # "Never" as Autolock off with timeout 0 (kcm/ui/main.qml), so "never" is written the same way here. Locking
+      # after sleep stays on, and Meta+Ctrl+L locks by hand.
+      autoLock = d.autoLock != false;
+      timeout =
+        if d.autoLock == false then
+          0
+        else if d.autoLock == true then
+          5
+        else
+          d.autoLock;
       lockOnResume = true;
     };
 
@@ -176,6 +190,8 @@ in
       # (EngineType …), which Polonium 1.2 ignores, so the 1.2 keys are set directly below (res/main.xml,
       # src/controller/config.ts of Polonium 1.2.1). Seen in a VM test: the engine stayed the binary tree.
       scripts.polonium.enable = true;
+      # Accessibility, "Shake pointer to find it" (the shakecursor effect): on only with d.shakeCursor.
+      effects.shakeCursor.enable = d.shakeCursor;
     };
 
     # Apps opened on a fixed desktop (d.appDesktops; empty by default), like i3's `for_window … move to workspace N`.
@@ -228,23 +244,52 @@ in
     session.sessionRestore.restoreOpenApplicationsOnLogin =
       if d.restoreSession then "onLastLogout" else "startWithEmptySession";
 
-    # The session's LC_TIME (Plasma exports [Formats] of plasma-localerc at login); empty means the default
-    # locale. The lock-screen clock has its own format (pkgs/itchy-kde-theme.nix: the locale's short format has no
-    # seconds, not even in C).
-    configFile."plasma-localerc".Formats.LC_TIME = if d.timeLocale == null then "" else d.timeLocale;
+    # Region & Language: the session's formats (d.formats; Plasma exports [Formats] of plasma-localerc at login). An
+    # empty value means the default locale. The lock-screen clock has its own format (shellWithClock above).
+    configFile."plasma-localerc".Formats = lib.mapAttrs (_: v: if v == null then "" else v) d.formats;
 
     # Privacy: no file indexing (Baloo); no history of opened files: the activity manager's "do not remember"
     # (what-to-remember 2, kactivitymanagerd_plugins_settings.kcfg), KDE's recent documents, GTK's
-    # recently-used list, and KRunner's recent-documents search.
+    # recently-used list, and KRunner's recent-documents search (with the other search plugins below).
     configFile.baloofilerc."Basic Settings"."Indexing-Enabled" = false;
     configFile."kactivitymanagerd-pluginsrc"."Plugin-org.kde.ActivityManager.Resources.Scoring"."what-to-remember" = 2;
     configFile.kdeglobals.RecentDocuments = {
       UseRecent = false;
       MaxEntries = 0;
     };
-    configFile.krunnerrc.Plugins.krunner_recentdocumentsEnabled = false;
     configFile."gtk-3.0/settings.ini".Settings.gtk-recent-files-enabled = false;
     configFile."gtk-4.0/settings.ini".Settings.gtk-recent-files-enabled = false;
+
+    # Plasma Search (KRunner, the launcher's search, Overview) without the plugins that read personal files or
+    # browsing data, or send what is typed to a server: file search (Baloo, which indexes nothing anyway), recent
+    # files, places, Kate sessions, the browsers' bookmarks, history and tabs, and the dictionary (dict.org). The ids
+    # are the plugins' CMake targets, or X-KDE-PluginInfo-Name for the D-Bus ones (plasma-workspace,
+    # kdeplasma-addons and plasma-browser-integration 6.8). System Settings still lists them, unticked.
+    configFile.krunnerrc.Plugins = {
+      baloosearchEnabled = false;
+      krunner_recentdocumentsEnabled = false;
+      krunner_placesrunnerEnabled = false;
+      krunner_katesessionsEnabled = false;
+      krunner_bookmarksrunnerEnabled = false;
+      browserhistoryEnabled = false;
+      browsertabsEnabled = false;
+      krunner_dictionaryEnabled = false;
+    };
+    # No search history. KRunner keeps none with its history off (plasma-workspace 6.8 krunner/qml/RunCommand.qml);
+    # the launcher's search keeps the terms of the results opened from it all the same (applets/kicker
+    # runnermatchesmodel.cpp: its own RunnerManager, history on by default), so both stores are emptied at every
+    # login.
+    krunner.historyBehavior = "disabled";
+    startup.startupScript.clearSearchHistory = {
+      text = ''
+        for f in "$HOME/.local/share/krunnerstaterc" "''${XDG_STATE_HOME:-$HOME/.local/state}/plasmashellstaterc"; do
+          [ -f "$f" ] || continue
+          tmp=$(mktemp "$f.XXXXXX")
+          ${pkgs.gawk}/bin/awk '/^\[/ { skip = ($0 == "[PlasmaRunnerManager][History]" || $0 == "[KickerRunnerManager][History]") } !skip' "$f" > "$tmp" && mv "$tmp" "$f" || rm -f "$tmp"
+        done
+      '';
+      runAlways = true;
+    };
 
     # "Legacy X11 App Support": X11 apps may not read keys typed into other apps (KWin's default lets them see
     # key combinations, kwin.kcfg XwaylandEavesdrops). The sandboxed apps get no X11 at all (pkgs/bwrap-app.nix);

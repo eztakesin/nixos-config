@@ -102,11 +102,19 @@ let
         date = "longDate"; # top bar: "shortDate", "longDate", "isoDate", or null for no date
         lockScreen = "HH:mm:ss"; # Qt time format of the lock-screen clock, e.g. "HH:mm" or "h:mm AP"
       };
-      # LC_TIME of the Plasma session: "C.UTF-8" gives 24-hour time and the long date "Sunday, 25 October 2026" in
-      # every KDE application; null leaves dates and times to the default locale.
-      timeLocale = "C.UTF-8";
+      # Formats of the Plasma session, as Region & Language sets them: a locale per LC_* category. C.UTF-8 gives
+      # 24-hour time and the long date "Sunday, 25 October 2026", metric units and A4 paper. Other categories can be
+      # added (LC_NUMERIC, LC_MONETARY …); null leaves one to the default locale. A locale other than C.UTF-8 also
+      # goes into locale.extra, for programs that take their formats from glibc.
+      formats = {
+        LC_TIME = "C.UTF-8";
+        LC_MEASUREMENT = "C.UTF-8";
+        LC_PAPER = "C.UTF-8";
+      };
       keepAwakeOnAC = true; # on AC: no sleep, no dimming, no blank screen
-      autoLock = false; # lock the screen after idle time, on AC and on battery; locking after sleep stays on
+      # Lock the screen after idle time, on AC and on battery: false (never), true (after 5 minutes, KDE's default) or
+      # a number of minutes. Locking after sleep stays on.
+      autoLock = false;
       restoreSession = false; # reopen the last session's applications at login
       tileGap = 0; # pixels between tiled windows and around them
       # Apps that open floating instead of tiled, by window class (exact names; a list here replaces this one
@@ -120,6 +128,7 @@ let
         "org.kde.kcalc"
       ];
       globalMenu = true; # the application's menus in the top bar, as on macOS (KDE and other Qt apps)
+      shakeCursor = false; # "Shake pointer to find it": shaking the mouse briefly enlarges the pointer
       # Apps that always open on one desktop, like i3's `for_window … move to workspace N`: regular expressions on
       # the window class. Empty: every app opens on the desktop in view.
       appDesktops = [ ];
@@ -134,6 +143,7 @@ let
         "org.signal.Signal.desktop"
         "im.riot.Riot.desktop"
         "org.telegram.desktop.desktop"
+        "org.kde.tokodon.desktop"
         "systemsettings.desktop"
       ];
     };

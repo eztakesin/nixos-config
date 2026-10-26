@@ -77,12 +77,20 @@
 
     # 12-hour clock without seconds and a short date in the top bar, and a 12-hour lock screen:
     # clock = { format = "12h"; seconds = false; date = "shortDate"; lockScreen = "h:mm AP"; };
-    # timeLocale = null; # the default locale's dates and times in the applications
 
-    # Laptop defaults instead: sleep and screen blanking on AC, automatic lock, the last session reopened.
+    # Formats (Region & Language), a locale per LC_* category. The default locale's dates, US units and Letter paper:
+    # formats = { LC_TIME = null; LC_MEASUREMENT = null; LC_PAPER = null; };
+    # German numbers and money as well (a locale other than C.UTF-8 also goes into locale.extra above):
+    # formats = { LC_NUMERIC = "de_DE.UTF-8"; LC_MONETARY = "de_DE.UTF-8"; };
+
+    # Laptop defaults instead: sleep and screen blanking on AC, a lock after 10 idle minutes (true: KDE's 5), the
+    # last session reopened.
     # keepAwakeOnAC = false;
-    # autoLock = true;
+    # autoLock = 10;
     # restoreSession = true;
+
+    # "Shake pointer to find it" on again:
+    # shakeCursor = true;
 
     # The dock's apps, by desktop file name:
     # dock = [ "org.kde.dolphin.desktop" "firefox.desktop" "kitty.desktop" "systemsettings.desktop" ];

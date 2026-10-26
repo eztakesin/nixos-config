@@ -26,7 +26,8 @@ audited and rebuilt from one declarative source. Every protection also states wh
   [A fresh system on every boot →](https://nixos.ssf.network/architecture/ephemeral-system/)
 - **Network:** a default-deny firewall, an encrypted proxy, encrypted DNS, a Wi-Fi address that changes from
   network to network, and Tor. [Network →](https://nixos.ssf.network/architecture/network/)
-- **Sandboxes:** browsers and the document viewer in bubblewrap, messengers in Flatpak, AppArmor profiles.
+- **Sandboxes:** browsers and the document viewer in bubblewrap, messengers and a Fediverse client in Flatpak,
+  AppArmor profiles.
   [Applications →](https://nixos.ssf.network/architecture/applications/)
 - **Desktop:** KDE Plasma with the Itchy theme and tiling after i3 and dwm, a login screen that names no accounts,
   and input methods for Chinese, Japanese and the European languages. [Desktop and input methods →](https://nixos.ssf.network/architecture/desktop/)
@@ -67,7 +68,8 @@ Your own values go in `my/private.nix`, which git ignores: copy the commented te
 ```
 
 The [personalisation page](https://nixos.ssf.network/reference/personalisation/) lists every desktop setting with
-its default: theme, icons, cursor, wallpaper, display scale, clocks, power, screen locking, session and dock.
+its default: theme, icons, cursor, wallpaper, display scale, clocks, formats, power, screen locking, session and
+dock.
 
 ## Repository layout
 
