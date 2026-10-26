@@ -27,6 +27,13 @@
   home.homeDirectory = "/home/${my.user.username}";
   home.stateVersion = "26.05";
 
+  # Fonts come from the system (modules/nixos/locale-fonts.nix, with the per-language rules); this profile installs
+  # none. Home-Manager's fontconfig module, on by default here (it follows NixOS' fonts.fontconfig.enable when
+  # useUserPackages is on), only adds three files to ~/.config/fontconfig/conf.d: the profile's font folders, which
+  # are empty, and rendering and default-font settings, which are unset. Off, so that nothing else writing there
+  # can stop the activation again, as a file in its way did on 2026-10-26.
+  fonts.fontconfig.enable = false;
+
   xdg.enable = true;
   programs.home-manager.enable = true;
 }
