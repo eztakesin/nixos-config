@@ -30,6 +30,12 @@ in
       ".cache/mozilla"
     ];
     homeDirsRo = desktopRo;
+    # A filtered session bus with two names. The desktop portal: links for other apps, such as an app's login
+    # callback (io.element.desktop:, tokodon:) or mailto:, leave the sandbox through it (user-overrides.js turns
+    # this on). Firefox's own name: a link opened while Firefox runs reaches the running instance instead of
+    # stopping at the locked profile.
+    dbusTalk = [ "org.freedesktop.portal.Desktop" ];
+    dbusOwn = [ "org.mozilla.firefox.*" ];
   };
 
   # PDF, PostScript, DjVu and comic books: zathura's own sandboxed build (no network, landlock-limited file

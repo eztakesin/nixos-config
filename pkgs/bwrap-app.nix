@@ -8,13 +8,15 @@
 # What the program gets: the Nix store and /etc read-only, its own home directories, the Wayland socket
 # (X11 is withheld: no DISPLAY, no X socket), and optionally the network, the GPU, the PulseAudio socket,
 # the Downloads folder, or the files named on its command line. What it does not get: the rest of $HOME,
-# other users, the D-Bus session bus (no portals, notifications or remote control in this first version),
-# the gpg/ssh agents, other processes (own PID namespace) and the controlling terminal (new session).
+# other users, the D-Bus session bus (unless dbusTalk/dbusOwn name services: then a filtered connection that
+# shows only those), the gpg/ssh agents, other processes (own PID namespace) and the controlling terminal (new
+# session).
 # Programs that sandbox themselves (Firefox's content processes) keep doing so: bubblewrap leaves nested
 # user namespaces available.
 {
   lib,
   bubblewrap,
+  xdg-dbus-proxy,
   coreutils,
   gnused,
   runtimeShell,
@@ -40,6 +42,10 @@
   homeDirsRo ? [ ],
   # Document viewers: bind each existing file named on the command line read-only, at its real path.
   openFiles ? false,
+  # Session-bus services the program may call (dbusTalk) or own (dbusOwn), through a filtered connection
+  # (xdg-dbus-proxy, as Flatpak does it); nothing else on the bus is visible. "org.example.*" covers subnames.
+  dbusTalk ? [ ],
+  dbusOwn ? [ ],
   extraBwrapArgs ? [ ],
   meta ? { },
 }:
@@ -98,6 +104,31 @@ let
       # PulseAudio protocol (served by PipeWire). Note: this socket also allows recording.
       if [ -S "$rt/pulse/native" ]; then
         args+=(--ro-bind "$rt/pulse/native" /tmp/runtime/pulse/native --setenv PULSE_SERVER unix:/tmp/runtime/pulse/native)
+      fi
+    ''}
+    ${lib.optionalString (dbusTalk != [ ] || dbusOwn != [ ]) ''
+      # The filtered session bus. The proxy writes one byte to its stdout once it listens and stops when the read
+      # end of that pipe closes; bubblewrap holds that end (--sync-fd) while the program runs. The subshell then
+      # removes the socket's directory.
+      if [ -n "''${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
+        bus_dir=$(mktemp -d "$rt/${pname}-bus.XXXXXX")
+        exec {bus_sync}< <(
+          ${xdg-dbus-proxy}/bin/xdg-dbus-proxy "$DBUS_SESSION_BUS_ADDRESS" "$bus_dir/bus" --filter \
+            ${lib.concatMapStringsSep " " (n: q "--talk=${n}") dbusTalk} ${lib.concatMapStringsSep " " (n: q "--own=${n}") dbusOwn} \
+            --fd=1
+          rm -rf -- "$bus_dir"
+        )
+        if read -r -n 1 -u "$bus_sync" _; then
+          args+=(--sync-fd "$bus_sync" --ro-bind "$bus_dir/bus" /tmp/runtime/bus)
+          args+=(--setenv DBUS_SESSION_BUS_ADDRESS unix:path=/tmp/runtime/bus)
+          ${lib.optionalString (lib.elem "org.freedesktop.portal.Desktop" dbusTalk) ''
+            # GLib, which opens links for Firefox, uses the portal outside Flatpak only when told to; without
+            # it, it looks for a handler inside the sandbox, finds none and fails ("Operation not supported").
+            args+=(--setenv GIO_USE_PORTALS 1)
+          ''}
+        else
+          echo "${pname}: the D-Bus proxy did not start; running without the session bus" >&2
+        fi
       fi
     ''}
     for d in ${lib.concatMapStringsSep " " q homeDirs}; do

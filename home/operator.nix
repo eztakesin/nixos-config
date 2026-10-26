@@ -6,6 +6,7 @@
     ./modules/fish.nix
     ./modules/starship.nix
     ./modules/kitty.nix
+    ./modules/konsole.nix
     ./modules/git.nix
     ./modules/gpg.nix
     ./modules/ssh.nix

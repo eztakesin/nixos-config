@@ -2,8 +2,9 @@
 #   - Flatpak + xdg-desktop-portal for the messengers (messaging.nix): each app sees its own data, files come
 #     through the portal's file chooser.
 #   - bubblewrap wrappers (pkgs/bwrap-app.nix, oxalica's pattern) for the programs that open untrusted
-#     content: Firefox, Tor Browser (tor.nix) and the document viewer. No D-Bus in this first version: no
-#     portals, notifications or opening links from other apps into a running browser; uploads and
+#     content: Firefox, Tor Browser (tor.nix) and the document viewer. Firefox gets a filtered session bus with
+#     the desktop portal and its own name (pkgs/default.nix): links for other apps leave through the portal, and
+#     links from other apps reach the running Firefox. Tor Browser and the viewer get no bus. Uploads and
 #     downloads go through the Downloads folder.
 #   - AppArmor profiles for those same programs, in COMPLAIN mode: they log what a program does beyond its
 #     profile without blocking it. On the laptop, collect the log, complete the profiles, then switch them to

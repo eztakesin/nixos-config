@@ -118,4 +118,10 @@ user_pref("font.name.sans-serif.zh-CN", "sans-serif");
 user_pref("font.name.serif.zh-CN", "serif");
 user_pref("font.cjk_pref_fallback_order", "zh-cn,zh-hk,zh-tw,ja");
 
+/*** Sandbox (pkgs/bwrap-app.nix): the bubblewrap sandbox reaches the desktop only through the portal, so links
+ *   for other apps (login callbacks such as io.element.desktop: and tokodon:, mailto:) and "open with" for
+ *   downloads go there. 1 = always; the default, 2, uses the portal only inside Flatpak or Snap. ***/
+user_pref("widget.use-xdg-desktop-portal.open-uri", 1);
+user_pref("widget.use-xdg-desktop-portal.mime-handler", 1);
+
 user_pref("_my_overrides.parrot", "END: user-overrides.js loaded");

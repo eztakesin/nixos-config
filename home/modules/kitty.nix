@@ -1,6 +1,11 @@
 # kitty — palette and settings ported verbatim from the operator's macOS config; macOS-only keys dropped.
-# Font size reduced from 18 (Retina) to 13 for the 15.6" 1080p panel — adjust to taste.
-{ ... }:
+# Font size reduced from 18 (Retina) to 13 for the 15.6" 1080p panel — adjust to taste. The palette lives in
+# ../terminal-colors.nix, shared with Konsole.
+{ lib, ... }:
+let
+  palette = import ../terminal-colors.nix;
+  colors = lib.listToAttrs (lib.imap0 (i: c: lib.nameValuePair "color${toString i}" c) palette.colors);
+in
 {
   programs.kitty = {
     enable = true;
@@ -10,34 +15,16 @@
       size = 13;
     };
 
-    settings = {
-      cursor = "#3D2B5A";
+    settings = colors // {
+      cursor = palette.cursor;
       scrollback_lines = 10000;
       enable_audio_bell = "no";
       confirm_os_window_close = 0;
 
-      foreground = "#7E3462";
-      background = "#F6F2EE";
+      inherit (palette) foreground background;
       background_opacity = "1";
-      selection_foreground = "#BAB5BF";
-      selection_background = "#3E2B5A";
-
-      color0 = "#1e1e1e";
-      color8 = "#444b6a";
-      color1 = "#f7768e";
-      color9 = "#ff7a93";
-      color2 = "#69c05c";
-      color10 = "#9ece6a";
-      color3 = "#ffcc99";
-      color11 = "#ffbd49";
-      color4 = "#3a8fff";
-      color12 = "#66ccff";
-      color5 = "#9ea0dd";
-      color13 = "#c89bb9";
-      color6 = "#0aaab3";
-      color14 = "#56b6c2";
-      color7 = "#bfc2da";
-      color15 = "#d2d7ff";
+      selection_foreground = palette.selectionForeground;
+      selection_background = palette.selectionBackground;
 
       shell_integration = "no-sudo";
       clipboard_control = "write-clipboard read-clipboard";
