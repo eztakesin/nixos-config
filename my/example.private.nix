@@ -110,4 +110,8 @@
 
   # The Catppuccin flavour of the login screen and the fcitx5 candidate window:
   # look = { flavor = "mocha"; accent = "mauve"; };
+
+  # Opt-in features (https://nixos.ssf.network/reference/packages/), e.g. a Chrome for a browser wallet only, with
+  # Rabby Wallet as its one extension (walletBrowser.extensions in my/default.nix):
+  # features = { walletBrowser = true; };
 }

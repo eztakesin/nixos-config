@@ -66,8 +66,12 @@ let
       flavor = "latte";
       accent = "blue";
     };
-    # Opt-in features (https://nixos.ssf.network/reference/packages/): zoom, java, julia, foundry, azure, android, killSwitch.
+    # Opt-in features (https://nixos.ssf.network/reference/packages/): zoom, java, julia, foundry, azure, android, killSwitch,
+    # walletBrowser.
     features = { };
+    # The extensions of the wallet's Chrome (features.walletBrowser, modules/nixos/wallet-browser.nix), by Chrome Web
+    # Store id: only these are installed, and no other extension can be added.
+    walletBrowser.extensions = [ "acmacodkjbdgmoleebolmdjonilkdbch" ]; # Rabby Wallet (rabby.io)
     # KDE Plasma personalisation of the operator's account (home/modules/plasma.nix; the theme packages in
     # modules/nixos/desktop-kde.nix). Change single keys in my/private.nix; the others keep these values.
     # https://nixos.ssf.network/reference/personalisation/

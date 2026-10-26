@@ -85,6 +85,17 @@ let
     '';
   };
 
+  # The dock's apps; the wallet's Chrome (a Flatpak, modules/nixos/wallet-browser.nix) joins them after the other
+  # browsers when its feature is on.
+  chromeDev = "com.google.ChromeDev.desktop";
+  dock =
+    if !((my.features or { }).walletBrowser or false) then
+      d.dock
+    else if lib.elem "tor-browser.desktop" d.dock then
+      lib.concatMap (app: [ app ] ++ lib.optional (app == "tor-browser.desktop") chromeDev) d.dock
+    else
+      d.dock ++ [ chromeDev ];
+
   # Desktop n (1–10) on Super+n; Super+Shift+n moves the window there (Shift+digit as KDE records it, US layout).
   digits = [ "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" ];
   shifted = [ "!" "@" "#" "$" "%" "^" "&" "*" "(" ")" ];
@@ -175,7 +186,7 @@ in
         widgets = [
           {
             # tor-browser.desktop is the bwrap wrapper's (pkgs/default.nix); the messengers' come from Flatpak.
-            iconTasks.launchers = map (app: "applications:${app}") d.dock;
+            iconTasks.launchers = map (app: "applications:${app}") dock;
           }
         ];
       }

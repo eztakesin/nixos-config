@@ -24,6 +24,7 @@
     ./home.nix # Home-Manager wiring for the operator
     ./messaging.nix # Signal + Element as confined Flatpaks (nix-flatpak)
     ./tor.nix # app-level Tor + Tor Browser
+    ./wallet-browser.nix # opt-in (my.features.walletBrowser): Chrome (dev channel) for a browser wallet only
     # supply-chain settings (signatures, trusted users, substituters) live in nix-settings.nix
   ];
 }
