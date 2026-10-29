@@ -25,9 +25,8 @@
     pkiBundle = "/var/lib/sbctl"; # persisted (modules/nixos/impermanence.nix)
   };
 
-  # systemd stage-1 is the default on nixos-unstable (26.05+); explicit because the FIDO2 unlock path
-  # (systemd-cryptenroll + crypttab fido2-device=auto) only exists there.
-  boot.initrd.systemd.enable = true;
+  # systemd stage-1, which the FIDO2 unlock path (systemd-cryptenroll + crypttab fido2-device=auto) needs, is
+  # the only initrd since nixpkgs removed the scripted one (2026-10); boot.initrd.systemd.enable is gone with it.
 
   # The ESP and the LUKS header live on the USB key and the YubiKey is a USB HID device, so the initrd
   # needs the USB stack + HID; nvme for the SN740 root. Missing xhci_pci/usb_storage is the classic
