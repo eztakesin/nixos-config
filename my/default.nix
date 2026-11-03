@@ -42,10 +42,10 @@ let
     # Further fcitx5 input-method addons, as nixpkgs attribute paths (e.g. "fcitx5-chewing"). Set in
     # my/private.nix together with any locale it needs, so the public configuration does not list every
     # language the operator types.
-    inputMethods.extraAddons = [ ];
+    inputMethods.extraAddons = [];
     # fcitx5 input methods to add to the profile after the public ones (rime, mozc, keyboard-us-altgr-intl),
     # by their fcitx5 names (e.g. "chewing", or "keyboard-de" for an XKB layout); also set in my/private.nix.
-    inputMethods.extraItems = [ ];
+    inputMethods.extraItems = [];
     # Extra USBGuard rules for your own USB devices (sticks, a card reader, a second YubiKey): lines of the
     # USBGuard rule language, added after the public Yubico rule (modules/nixos/hardening/peripherals.nix).
     # They name serial numbers, so set them in my/private.nix. To get a device's line, plug it in on the
@@ -68,10 +68,10 @@ let
     };
     # Opt-in features (https://nixos.ssf.network/reference/packages/): zoom, java, julia, foundry, azure, android, killSwitch,
     # walletBrowser.
-    features = { };
+    features = {};
     # The extensions of the wallet's Chrome (features.walletBrowser, modules/nixos/wallet-browser.nix), by Chrome Web
     # Store id: only these are installed, and no other extension can be added.
-    walletBrowser.extensions = [ "acmacodkjbdgmoleebolmdjonilkdbch" ]; # Rabby Wallet (rabby.io)
+    walletBrowser.extensions = ["acmacodkjbdgmoleebolmdjonilkdbch" "naelmomeimhlpmgjnjophhpkkoljpa"]; # Rabby Wallet (rabby.io)
     # KDE Plasma personalisation of the operator's account (home/modules/plasma.nix; the theme packages in
     # modules/nixos/desktop-kde.nix). Change single keys in my/private.nix; the others keep these values.
     # https://nixos.ssf.network/reference/personalisation/
@@ -135,7 +135,7 @@ let
       shakeCursor = false; # "Shake pointer to find it": shaking the mouse briefly enlarges the pointer
       # Apps that always open on one desktop, like i3's `for_window … move to workspace N`: regular expressions on
       # the window class. Empty: every app opens on the desktop in view.
-      appDesktops = [ ];
+      appDesktops = [];
       # The dock's apps, by desktop file name (ls /run/current-system/sw/share/applications ~/.nix-profile/share/applications).
       dock = [
         "org.kde.dolphin.desktop"
@@ -152,14 +152,20 @@ let
       ];
     };
   };
-  private = if builtins.pathExists ./private.nix then import ./private.nix else { };
+  private =
+    if builtins.pathExists ./private.nix
+    then import ./private.nix
+    else {};
   # Key by key, recursively: a private `desktop = { iconTheme = "breeze"; };` changes that key and keeps the
   # other defaults. Lists and all other values are replaced whole.
-  merge =
-    a: b:
+  merge = a: b:
     a
     // builtins.mapAttrs (
-      k: v: if builtins.isAttrs v && builtins.isAttrs (a.${k} or null) then merge a.${k} v else v
-    ) b;
+      k: v:
+        if builtins.isAttrs v && builtins.isAttrs (a.${k} or null)
+        then merge a.${k} v
+        else v
+    )
+    b;
 in
-merge public private
+  merge public private
