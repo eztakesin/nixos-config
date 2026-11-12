@@ -113,6 +113,24 @@
     normcap
     # File and archive managerFile and archive manager
     peazip
+    # Powerful batch renamer for KDE
+    krename
+    # Pick and format colorsPick and format colors
+    eyedropper
+    # Checks whether the contrast between two colors meet the WCAG requirements
+    contrast
+    # Identify any songs in seconds
+    mousai
+    # Modern GUI video and audio downloader
+    ytdownloader
+    # Beautiful and lightweight weather app based on Python and GTK4
+    mousam
+    # A cross-platform iDevice management tool
+    idescriptor
+    # Python GTK application to view and clean metadata in files, using mat2
+    metadata-cleaner
+    # Find info about an IP address
+    iplookup-gtk
   ];
 in {
   home.packages =
