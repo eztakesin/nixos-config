@@ -40,7 +40,7 @@
     pyright
     stylua
     nil
-    topiary
+    # topiary
     eslint
     vscode-langservers-extracted
     yaml-language-server
