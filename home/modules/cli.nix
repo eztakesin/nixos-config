@@ -2,13 +2,16 @@
 # configured through its Home-Manager module; the fish aliases in fish.nix map the classic names onto
 # these (ls→eza, du→dust, curl→xh, ping→gping, mtr→trip, tar→ouch, jq→jaq, fzf→sk, nmap→rustscan).
 # Catppuccin Latte theming for bat/btop/yazi lives in theme.nix (pinned upstream theme files, no IFD).
-{ config, lib, pkgs, ... }:
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   # zellij starts by itself only in terminals of the graphical session (WAYLAND_DISPLAY/DISPLAY set), never
   # on a text-console login, and never nested. Same generated script as Home-Manager's shell integration.
   zellij = lib.getExe config.programs.zellij.finalPackage;
-in
-{
+in {
   programs = {
     fish.interactiveShellInit = ''
       if set -q WAYLAND_DISPLAY; or set -q DISPLAY
@@ -139,7 +142,7 @@ in
         sort_dir_first = true;
       };
     };
-    joshuto.enable = true;
+    # joshuto.enable = true;
     ranger.enable = true;
     zellij = {
       enable = true;
