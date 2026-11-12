@@ -97,6 +97,22 @@
     easylpac
     proton-vpn
     discord
+    # Monitor your system resources and processes
+    resources
+    # Monitor your CPU, Memory, Disk, Network and GPU usage
+    mission-center
+    # HDD and SSD benchmark tool with a friendly graphical user interface
+    kdiskmark
+    # Highly secure and easy to use OTP client written in C/GTK that supports both TOTP and HOTP
+    otpclient
+    # Understand File Permissions
+    concessio
+    # Check hashes for your files
+    collision
+    # OCR powered screen-capture tool to capture information instead of images
+    normcap
+    # File and archive managerFile and archive manager
+    peazip
   ];
 in {
   home.packages =
