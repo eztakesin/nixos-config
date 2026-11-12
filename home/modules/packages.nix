@@ -96,6 +96,7 @@
     qalculate-qt
     easylpac
     proton-vpn
+    discord
   ];
 in {
   home.packages =
