@@ -17,9 +17,8 @@
 #
 # Disappearing-message timers are configured inside each app; they do not protect against the other
 # endpoint keeping copies, and local state still relies on full-disk encryption.
-{ inputs, ... }:
-{
-  imports = [ inputs.nix-flatpak.nixosModules.nix-flatpak ];
+{inputs, ...}: {
+  imports = [inputs.nix-flatpak.nixosModules.nix-flatpak];
 
   services.flatpak = {
     remotes = [
@@ -32,7 +31,7 @@
       "org.signal.Signal"
       "im.riot.Riot" # Element
       "org.telegram.desktop"
-      "org.kde.tokodon"
+      # "org.kde.tokodon"
     ];
     update.auto = {
       enable = true;

@@ -101,8 +101,6 @@
     resources
     # Monitor your CPU, Memory, Disk, Network and GPU usage
     mission-center
-    # HDD and SSD benchmark tool with a friendly graphical user interface
-    kdiskmark
     # Highly secure and easy to use OTP client written in C/GTK that supports both TOTP and HOTP
     otpclient
     # Understand File Permissions
@@ -131,6 +129,8 @@
     metadata-cleaner
     # Find info about an IP address
     iplookup-gtk
+    # Multi-column Fediverse client application for desktop
+    fedistar
   ];
 in {
   home.packages =
